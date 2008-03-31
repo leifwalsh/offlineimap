@@ -41,6 +41,7 @@ class LocalStatusFolder(BaseFolder):
         self.savelock = threading.Lock()
         self.doautosave = 1
         self.accountname = accountname
+        self.count = 0 # used for batching operations before commit
         BaseFolder.__init__(self)
 	self.dbfilename = self.filename + '.sqlite'
 
@@ -184,7 +185,10 @@ class LocalStatusFolder(BaseFolder):
         flags.sort()
         flags = ''.join(flags)
         self.cursor.execute('UPDATE status SET flags=? WHERE id=?',(flags,uid))
-        self.autosave()
+        self.count = self.count + 1
+        if self.count == 100:
+            self.autosave()
+            self.count = 0
 
     def deletemessage(self, uid):
         if not self.uidexists(uid):
