@@ -61,7 +61,15 @@ prop_allChangesToChild master child =
     let (resMaster, resChild) = syncBiDir master child child
         expectedResChild = sort $
             (map (\(k, v) -> CopyItem k v) . Map.toList . Map.difference master $ child) ++
-            (map DeleteItem . Map.keys . Map.difference child $ master)
+            (map DeleteItem . Map.keys . Map.difference child $ master) ++
+            (map (\(k, v) -> ModifyContent k v) changeList)
+        changeList = foldl changefunc [] (Map.toList child)
+        changefunc accum (k, v) =
+            case Map.lookup k master of
+              Nothing -> accum
+              Just x -> if x /= v
+                        then (k, x) : accum
+                        else accum
         in ([], expectedResChild) @=?
            (resMaster, sort resChild)
 
@@ -70,7 +78,15 @@ prop_allChangesToMaster master child =
     let (resMaster, resChild) = syncBiDir master child master
         expectedResMaster = sort $
             (map (\(k, v) -> CopyItem k v) . Map.toList . Map.difference child $ master) ++
-            (map DeleteItem . Map.keys . Map.difference master $ child)
+            (map DeleteItem . Map.keys . Map.difference master $ child) ++
+            (map (\(k, v) -> ModifyContent k v) changeList)
+        changeList = foldl changefunc [] (Map.toList child)
+        changefunc accum (k, v) =
+            case Map.lookup k master of
+              Nothing -> accum
+              Just x -> if x /= v
+                        then (k, v) : accum
+                        else accum
         in (expectedResMaster, []) @=?
            (sort resMaster, resChild)
 

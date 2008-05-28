@@ -156,7 +156,9 @@ payload for each such item found. -}
 findModified :: (Ord k, Eq v) =>
                 SyncCollection k v -> SyncCollection k v -> SyncCollection k v
 findModified state1 lastchildstate =
-    Map.differenceWith (\v1 v2 -> if v1 /= v2 then Just v1 else Nothing) state1 $ lastchildstate
+    Map.mapMaybe id .  
+    Map.intersectionWith (\v1 v2 -> if v1 /= v2 then Just v1 else Nothing) 
+       state1 $ lastchildstate
 
 {- | Apply the specified changes to the given SyncCollection.  Returns
 a new SyncCollection with the changes applied.  If changes are specified
