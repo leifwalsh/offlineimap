@@ -24,19 +24,38 @@ import Test.HUnit.Utils
 import qualified Data.Map as Map
 import System.IO
 import Text.Printf
+import Data.List
 
 import Data.Syncable
 
+prop_empty :: Bool
 prop_empty =
     syncThem emptymap emptymap emptymap == ([], [], []) -- ([DeleteItem 5], [], [])
+
+prop_delAllFromChild :: SyncCollection Int -> Bool
+prop_delAllFromChild inp =
+    let (resMaster, resChild, resState) = syncThem emptymap inp inp
+        expectedResChild = sort . map DeleteItem . Map.keys $ inp
+        in resMaster == [] &&
+           (sort resChild == expectedResChild) &&
+           (sort resState == expectedResChild)
+
+prop_addFromMaster :: SyncCollection Int -> Bool
+prop_addFromMaster inp =
+    let (resMaster, resChild, resState) = syncThem inp emptymap emptymap
+        expectedResChild = sort . map CopyItem . Map.keys $ inp
+        in (resMaster == []) &&
+           (sort resChild == expectedResChild) &&
+           (sort resState == expectedResChild)
 
 keysToMap :: Ord k => [k] -> Map.Map k ()
 keysToMap = foldl (\map k -> Map.insert k () map) Map.empty
 
-emptymap :: Map.Map Integer ()
+emptymap :: Map.Map Int ()
 emptymap = Map.empty
 
-allt = [("Empty", prop_empty)]
+allt = [("Empty", prop_empty),
+        ("Del all from child", prop_delAllFromChild)]
 alltHU = map (\(str, prop) -> qctest str prop) allt
 
 testh = HU.runTestTT $ HU.TestList alltHU
