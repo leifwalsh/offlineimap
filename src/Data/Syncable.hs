@@ -81,10 +81,16 @@ syncThem :: (Ord k, Show k) =>
          -> ([SyncCommand k], [SyncCommand k]) -- ^ Changes to make to (master, child)
 syncThem masterstate childstate lastchildstate =
     (masterchanges, childchanges)
-    where masterchanges = map DeleteItem .
-                          findDeleted childstate masterstate $ lastchildstate
-          childchanges = map DeleteItem . 
-                         findDeleted masterstate childstate $ lastchildstate
+    where masterchanges = (map DeleteItem .
+                          findDeleted childstate masterstate $ lastchildstate)
+                          ++ 
+                          (map CopyItem .
+                           findAdded childstate masterstate $ lastchildstate)
+          childchanges = (map DeleteItem . 
+                          findDeleted masterstate childstate $ lastchildstate)
+                         ++
+                         (map CopyItem .
+                          findAdded masterstate childstate $ lastchildstate)
 
 {- | Returns a list of keys that exist in state1 and lastchildstate
 but not in state2 -}
@@ -93,6 +99,14 @@ findDeleted :: Ord k =>
                [k]
 findDeleted state1 state2 lastchildstate =
     Map.keys . Map.difference state2 . Map.difference state1 $ lastchildstate
+
+{- | Returns a list of keys that exist in state1 but in neither 
+state2 nor lastchildstate -}
+findAdded :: (Ord k, Eq k) =>
+               SyncCollection k -> SyncCollection k -> SyncCollection k ->
+               [k]
+findAdded state1 state2 lastchildstate =
+    Map.keys . Map.difference state1 . Map.union state2 $ lastchildstate
 
 {- | Returns a list of keys that exist in the passed state -}
 filterKeys :: (Ord k) => 
