@@ -117,3 +117,16 @@ filterKeys state keylist =
               case Map.lookup k state of
                 Nothing -> []
                 Just _ -> [k]
+
+{- | Apply the specified changes to the given SyncCollection.  Returns
+a new SyncCollection with the changes applied.  If changes are specified
+that would apply to UIDs that do not exist in the source list, these changes
+are silently ignored. -}
+unaryApplyChanges :: (Eq k, Ord k, Show k) => 
+                     SyncCollection k -> [SyncCommand k] -> SyncCollection k
+unaryApplyChanges collection commands =
+    let makeChange collection (DeleteItem key) =
+            Map.delete key collection
+        makeChange collection (CopyItem key) =
+            Map.insert key () collection
+    in foldl makeChange collection commands

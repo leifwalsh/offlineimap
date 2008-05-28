@@ -23,6 +23,7 @@ import qualified Test.HUnit as HU
 import Test.HUnit.Utils
 import qualified Data.Map as Map
 import Data.List
+import Data.Maybe(catMaybes)
 import System.IO(stderr)
 
 import Data.Syncable
@@ -83,13 +84,47 @@ prop_allChanges master child lastchild =
     in (expectedResMaster, expectedResChild) @=?
        (sort resMaster, sort resChild)
 
+{- | Basic validation that unaryApplyChanges works -}
+prop_unaryApplyChanges :: SyncCollection Int -> [(Bool, Int)] -> Result
+prop_unaryApplyChanges collection randcommands =
+    let -- We use nubBy to make sure we don't get input that has reference
+        -- to the same key more than once.  We then convert True/False to
+        -- commands.
+        commands = map toCommand . nubBy (\x y -> snd x == snd y) $ randcommands
+        toCommand (True, x) = CopyItem x
+        toCommand (False, x) = DeleteItem x
+
+        addedKeys = catMaybes . map (\x -> case x of CopyItem y -> Just y; _ -> Nothing) $ commands
+        deletedKeys = catMaybes . map (\x -> case x of DeleteItem y -> Just y; _ -> Nothing) $ commands
+        
+        expectedCollection = 
+            Map.union
+                   (Map.difference collection (keysToMap deletedKeys))
+                   (Map.intersection collection (keysToMap addedKeys))
+        in (sort . Map.keys $ expectedCollection) @=?
+           (sort . Map.keys $ unaryApplyChanges collection commands)
+
+{- | Should validate both that unaryApplyChanges works, and that it is
+an identify -}
+prop_unaryApplyChangesId :: SyncCollection Int -> SyncCollection Int -> Result
+prop_unaryApplyChangesId master child =
+    let (resMaster, resChild) = syncThem master child child
+        newMaster = unaryApplyChanges master resMaster
+        newChild = unaryApplyChanges child resChild
+        newMasterKeys = sort . Map.keys $ newMaster
+        newChildKeys = sort . Map.keys $ newChild
+        in (True, sort (Map.keys master), sort (Map.keys master)) @=?
+           (newMasterKeys == newChildKeys, newMasterKeys, newChildKeys)
+
 allt = [qctest "Empty" prop_empty,
         qctest "Del all from child" prop_delAllFromChild,
         qctest "Del all from master" prop_delAllFromMaster,
         qctest "Add from master" prop_addFromMaster,
         qctest "All changes to child" prop_allChangesToChild,
         qctest "All changes to master" prop_allChangesToMaster,
-        qctest "All changes" prop_allChanges
+        qctest "All changes" prop_allChanges,
+        qctest "unaryApplyChanges" prop_unaryApplyChanges,
+        qctest "unaryApplyChangesId" prop_unaryApplyChangesId
        ]
 
 testh = HU.runTestTT $ HU.TestList allt
