@@ -115,6 +115,13 @@ prop_unaryApplyChangesId master child =
         in (True, sort (Map.keys master), sort (Map.keys master)) @=?
            (newMasterKeys == newChildKeys, newMasterKeys, newChildKeys)
 
+prop_unaryApplyChanges3 :: SyncCollection Int -> SyncCollection Int -> SyncCollection Int -> Result
+prop_unaryApplyChanges3 master child lastChild =
+    let (resMaster, resChild) = syncBiDir master child lastChild
+        newMaster = unaryApplyChanges master resMaster
+        newChild = unaryApplyChanges child resChild
+    in newMaster @=? newChild
+
 allt = [qctest "Empty" prop_empty,
         qctest "Del all from child" prop_delAllFromChild,
         qctest "Del all from master" prop_delAllFromMaster,
@@ -123,7 +130,8 @@ allt = [qctest "Empty" prop_empty,
         qctest "All changes to master" prop_allChangesToMaster,
         qctest "All changes" prop_allChanges,
         qctest "unaryApplyChanges" prop_unaryApplyChanges,
-        qctest "unaryApplyChangesId" prop_unaryApplyChangesId
+        qctest "unaryApplyChangesId" prop_unaryApplyChangesId,
+        qctest "unaryApplyChanges3" prop_unaryApplyChanges3
        ]
 
 testh = HU.runTestTT $ HU.TestList allt

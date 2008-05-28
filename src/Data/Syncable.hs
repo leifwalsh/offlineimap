@@ -74,6 +74,17 @@ data (Eq k, Ord k, Show k) =>
          | CopyItem k
     deriving (Eq, Ord, Show)
 
+{- | Perform a bi-directional sync.  Compared to the last known state of
+the child, evaluate the new states of the master and child.  Return a list of
+changes to make to the master and list of changes to make to the child to
+bring them into proper sync.
+
+This relationship should hold:
+
+>let (masterCmds, childCmds) = syncBiDir masterState childState lastChildState
+>unaryApplyChanges masterState masterCmds == 
+> unaryApplyChanges childState childCmds
+-}
 syncBiDir :: (Ord k, Show k) =>
             SyncCollection k  -- ^ Present state of master
          -> SyncCollection k  -- ^ Present state of child
