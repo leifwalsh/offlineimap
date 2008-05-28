@@ -83,28 +83,15 @@ syncThem masterstate childstate lastchildstate =
     (masterchanges, childchanges)
     where masterchanges = [] 
           childchanges = map DeleteItem masterToChildDeletes
+          masterToChildDeletes = findDeleted masterstate childstate lastchildstate
 
-{-
-        # Delete local copies of remote messages.  This way,
-        # if a message's flag is modified locally but it has been
-        # deleted remotely, we'll delete it locally.  Otherwise, we
-        # try to modify a deleted message's flags!  This step
-        # need only be taken if a statusfolder is present; otherwise,
-        # there is no action taken *to* the remote repository.
-
-        FIXME: validate logic in situation of new folder here -}
-
-          masterToChildDeletes = syncToDelete masterstate childstate
-
-{- | Returns a list of keys that exist in childstate but not in masterstate -}
-syncToDelete :: (Ord k) => 
-                SyncCollection k -> SyncCollection k -> [k]
-syncToDelete masterstate childstate = 
-    concatMap keyfunc (Map.keys childstate)
-    where keyfunc k = 
-              case Map.lookup k masterstate of
-                Nothing -> [k]
-                Just _ -> []
+{- | Returns a list of keys that exist in state1 and lastchildstate
+but not in state2 -}
+findDeleted :: Ord k =>
+               SyncCollection k -> SyncCollection k -> SyncCollection k ->
+               [k]
+findDeleted state1 state2 lastchildstate =
+    Map.keys . Map.difference state2 . Map.difference state1 $ lastchildstate
 
 {- | Returns a list of keys that exist in the passed state -}
 filterKeys :: (Ord k) => 
