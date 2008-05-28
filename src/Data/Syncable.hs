@@ -84,6 +84,9 @@ This relationship should hold:
 >let (masterCmds, childCmds) = syncBiDir masterState childState lastChildState
 >unaryApplyChanges masterState masterCmds == 
 > unaryApplyChanges childState childCmds
+
+This relationship is validated in the test suite that accompanies this
+software.
 -}
 syncBiDir :: (Ord k, Show k) =>
             SyncCollection k  -- ^ Present state of master
@@ -102,6 +105,16 @@ syncBiDir masterstate childstate lastchildstate =
                          ++
                          (map CopyItem .
                           findAdded masterstate childstate $ lastchildstate)
+
+{- | Compares two SyncCollections, and returns the commands that, when
+applied to the first collection, would yield the second. -}
+diffCollection :: (Ord k, Show k) => 
+                  SyncCollection k
+               -> SyncCollection k
+               -> [SyncCommand k]
+diffCollection coll1 coll2 = 
+    (map DeleteItem . findDeleted coll2 coll1 $ coll1) ++
+    (map CopyItem . findDeleted coll1 coll2 $ coll2)
 
 {- | Returns a list of keys that exist in state2 and lastchildstate
 but not in state1 -}

@@ -122,6 +122,12 @@ prop_unaryApplyChanges3 master child lastChild =
         newChild = unaryApplyChanges child resChild
     in newMaster @=? newChild
 
+prop_diffCollection :: SyncCollection Int -> SyncCollection Int -> Result
+prop_diffCollection coll1 coll2 = 
+    let commands = diffCollection coll1 coll2
+        newcoll2 = unaryApplyChanges coll1 commands
+        in coll2 @=? newcoll2
+
 allt = [qctest "Empty" prop_empty,
         qctest "Del all from child" prop_delAllFromChild,
         qctest "Del all from master" prop_delAllFromMaster,
@@ -131,7 +137,8 @@ allt = [qctest "Empty" prop_empty,
         qctest "All changes" prop_allChanges,
         qctest "unaryApplyChanges" prop_unaryApplyChanges,
         qctest "unaryApplyChangesId" prop_unaryApplyChangesId,
-        qctest "unaryApplyChanges3" prop_unaryApplyChanges3
+        qctest "unaryApplyChanges3" prop_unaryApplyChanges3,
+        qctest "diffCollection" prop_diffCollection
        ]
 
 testh = HU.runTestTT $ HU.TestList allt
