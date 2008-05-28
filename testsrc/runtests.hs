@@ -30,21 +30,21 @@ import TestInfrastructure
 
 prop_empty :: Bool
 prop_empty =
-    syncThem emptymap emptymap emptymap == ([], [], []) -- ([DeleteItem 5], [], [])
+    syncThem emptymap emptymap emptymap == ([], []) -- ([DeleteItem 5], [], [])
 
 prop_delAllFromChild :: SyncCollection Int -> Result
 prop_delAllFromChild inp =
-    let (resMaster, resChild, resState) = syncThem emptymap inp inp
+    let (resMaster, resChild) = syncThem emptymap inp inp
         expectedResChild = sort . map DeleteItem . Map.keys $ inp
-        in ([], expectedResChild, expectedResChild) @=? 
-           (resMaster, sort resChild, sort resState)
+        in ([], expectedResChild) @=? 
+           (resMaster, sort resChild)
            
 prop_addFromMaster :: SyncCollection Int -> Result
 prop_addFromMaster inp =
-    let (resMaster, resChild, resState) = syncThem inp emptymap emptymap
+    let (resMaster, resChild) = syncThem inp emptymap emptymap
         expectedResChild = sort . map CopyItem . Map.keys $ inp
-        in ([], expectedResChild, expectedResChild) @=? 
-           (resMaster, sort resChild, sort resState)
+        in ([], expectedResChild) @=? 
+           (resMaster, sort resChild)
 
 allt = [qctest "Empty" prop_empty,
         qctest "Del all from child" prop_delAllFromChild]
