@@ -74,12 +74,12 @@ data (Eq k, Ord k, Show k) =>
          | CopyItem k
     deriving (Eq, Ord, Show)
 
-syncThem :: (Ord k, Show k) =>
+syncBiDir :: (Ord k, Show k) =>
             SyncCollection k  -- ^ Present state of master
          -> SyncCollection k  -- ^ Present state of child
          -> SyncCollection k  -- ^ Last state of child
          -> ([SyncCommand k], [SyncCommand k]) -- ^ Changes to make to (master, child)
-syncThem masterstate childstate lastchildstate =
+syncBiDir masterstate childstate lastchildstate =
     (masterchanges, childchanges)
     where masterchanges = (map DeleteItem .
                           findDeleted childstate masterstate $ lastchildstate)

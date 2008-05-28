@@ -31,32 +31,32 @@ import TestInfrastructure
 
 prop_empty :: Bool
 prop_empty =
-    syncThem (emptymap::Map.Map Int ()) emptymap emptymap == ([], []) -- ([DeleteItem 5], [], [])
+    syncBiDir (emptymap::Map.Map Int ()) emptymap emptymap == ([], []) -- ([DeleteItem 5], [], [])
 
 prop_delAllFromChild :: SyncCollection Int -> Result
 prop_delAllFromChild inp =
-    let (resMaster, resChild) = syncThem emptymap inp inp
+    let (resMaster, resChild) = syncBiDir emptymap inp inp
         expectedResChild = sort . map DeleteItem . Map.keys $ inp
         in ([], expectedResChild) @=? 
            (resMaster, sort resChild)
            
 prop_delAllFromMaster :: SyncCollection Int -> Result
 prop_delAllFromMaster inp =
-    let (resMaster, resChild) = syncThem inp emptymap inp
+    let (resMaster, resChild) = syncBiDir inp emptymap inp
         expectedResMaster = sort . map DeleteItem . Map.keys $ inp
         in (expectedResMaster, []) @=? 
            (sort resMaster, resChild)
            
 prop_addFromMaster :: SyncCollection Int -> Result
 prop_addFromMaster inp =
-    let (resMaster, resChild) = syncThem inp emptymap emptymap
+    let (resMaster, resChild) = syncBiDir inp emptymap emptymap
         expectedResChild = sort . map CopyItem . Map.keys $ inp
         in ([], expectedResChild) @=? 
            (resMaster, sort resChild)
 
 prop_allChangesToChild :: SyncCollection Int -> SyncCollection Int -> Result
 prop_allChangesToChild master child =
-    let (resMaster, resChild) = syncThem master child child
+    let (resMaster, resChild) = syncBiDir master child child
         expectedResChild = sort $
             (map CopyItem . Map.keys . Map.difference master $ child) ++
             (map DeleteItem . Map.keys . Map.difference child $ master)
@@ -65,7 +65,7 @@ prop_allChangesToChild master child =
 
 prop_allChangesToMaster :: SyncCollection Int -> SyncCollection Int -> Result
 prop_allChangesToMaster master child =
-    let (resMaster, resChild) = syncThem master child master
+    let (resMaster, resChild) = syncBiDir master child master
         expectedResMaster = sort $
             (map CopyItem . Map.keys . Map.difference child $ master) ++
             (map DeleteItem . Map.keys . Map.difference master $ child)
@@ -74,7 +74,7 @@ prop_allChangesToMaster master child =
 
 prop_allChanges :: SyncCollection Int -> SyncCollection Int -> SyncCollection Int -> Result
 prop_allChanges master child lastchild =
-    let (resMaster, resChild) = syncThem master child lastchild
+    let (resMaster, resChild) = syncBiDir master child lastchild
         expectedResMaster = sort $
             (map CopyItem . Map.keys . Map.difference child $ Map.union master lastchild) ++
                                                                                             (map DeleteItem . Map.keys . Map.intersection master $ Map.difference lastchild child)
@@ -107,7 +107,7 @@ prop_unaryApplyChanges collection randcommands =
 an identify -}
 prop_unaryApplyChangesId :: SyncCollection Int -> SyncCollection Int -> Result
 prop_unaryApplyChangesId master child =
-    let (resMaster, resChild) = syncThem master child child
+    let (resMaster, resChild) = syncBiDir master child child
         newMaster = unaryApplyChanges master resMaster
         newChild = unaryApplyChanges child resChild
         newMasterKeys = sort . Map.keys $ newMaster
