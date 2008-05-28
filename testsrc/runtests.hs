@@ -97,10 +97,9 @@ prop_unaryApplyChanges collection randcommands =
         addedKeys = catMaybes . map (\x -> case x of CopyItem y -> Just y; _ -> Nothing) $ commands
         deletedKeys = catMaybes . map (\x -> case x of DeleteItem y -> Just y; _ -> Nothing) $ commands
         
+        collection' = Map.difference collection (keysToMap deletedKeys)
         expectedCollection = 
-            Map.union
-                   (Map.difference collection (keysToMap deletedKeys))
-                   (Map.intersection collection (keysToMap addedKeys))
+            Map.union collection' (keysToMap addedKeys)
         in (sort . Map.keys $ expectedCollection) @=?
            (sort . Map.keys $ unaryApplyChanges collection commands)
 
