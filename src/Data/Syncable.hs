@@ -93,12 +93,12 @@ syncThem masterstate childstate lastchildstate =
                           findAdded masterstate childstate $ lastchildstate)
 
 {- | Returns a list of keys that exist in state2 and lastchildstate
-but not in state2 -}
+but not in state1 -}
 findDeleted :: Ord k =>
                SyncCollection k -> SyncCollection k -> SyncCollection k ->
                [k]
-findDeleted state2 state1 lastchildstate =
-    Map.keys . Map.difference (Map.intersection state1 lastchildstate) $ state2
+findDeleted state1 state2 lastchildstate =
+    Map.keys . Map.difference (Map.intersection state2 lastchildstate) $ state1
 
 {- | Returns a list of keys that exist in state1 but in neither 
 state2 nor lastchildstate -}
