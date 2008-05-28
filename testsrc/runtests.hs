@@ -71,12 +71,25 @@ prop_allChangesToMaster master child =
         in (expectedResMaster, []) @=?
            (sort resMaster, resChild)
 
+prop_allChanges :: SyncCollection Int -> SyncCollection Int -> SyncCollection Int -> Result
+prop_allChanges master child lastchild =
+    let (resMaster, resChild) = syncThem master child lastchild
+        expectedResMaster = sort $
+            (map CopyItem . Map.keys . Map.difference child $ Map.union master lastchild) ++
+                                                                                            (map DeleteItem . Map.keys . Map.intersection master $ Map.difference lastchild child)
+        expectedResChild = sort $
+            (map CopyItem . Map.keys . Map.difference master $ Map.union child lastchild) ++
+                                                                                            (map DeleteItem . Map.keys . Map.intersection child $ Map.difference lastchild master)
+    in (expectedResMaster, expectedResChild) @=?
+       (sort resMaster, sort resChild)
+
 allt = [qctest "Empty" prop_empty,
         qctest "Del all from child" prop_delAllFromChild,
         qctest "Del all from master" prop_delAllFromMaster,
         qctest "Add from master" prop_addFromMaster,
         qctest "All changes to child" prop_allChangesToChild,
-        qctest "All changes to master" prop_allChangesToMaster
+        qctest "All changes to master" prop_allChangesToMaster,
+        qctest "All changes" prop_allChanges
        ]
 
 testh = HU.runTestTT $ HU.TestList allt
