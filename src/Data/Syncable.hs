@@ -99,13 +99,13 @@ syncThem masterstate childstate lastchildstate =
           masterToStatusDeletes = filterKeys lastchildstate masterToChildDeletes
 
 
-{- | Returns a list of keys that exist in masterstate but not in childstate -}
+{- | Returns a list of keys that exist in childstate but not in masterstate -}
 syncToDelete :: (Ord k) => 
                 SyncCollection k -> SyncCollection k -> [k]
 syncToDelete masterstate childstate = 
-    concatMap keyfunc (Map.keys masterstate)
+    concatMap keyfunc (Map.keys childstate)
     where keyfunc k = 
-              case Map.lookup k childstate of
+              case Map.lookup k masterstate of
                 Nothing -> [k]
                 Just _ -> []
 
