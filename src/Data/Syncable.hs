@@ -81,9 +81,10 @@ syncThem :: (Ord k, Show k) =>
          -> ([SyncCommand k], [SyncCommand k]) -- ^ Changes to make to (master, child)
 syncThem masterstate childstate lastchildstate =
     (masterchanges, childchanges)
-    where masterchanges = [] 
-          childchanges = map DeleteItem masterToChildDeletes
-          masterToChildDeletes = findDeleted masterstate childstate lastchildstate
+    where masterchanges = map DeleteItem .
+                          findDeleted childstate masterstate $ lastchildstate
+          childchanges = map DeleteItem . 
+                         findDeleted masterstate childstate $ lastchildstate
 
 {- | Returns a list of keys that exist in state1 and lastchildstate
 but not in state2 -}
