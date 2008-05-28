@@ -69,7 +69,9 @@ Executable offlineimap
 
 Executable runtests
   Build-Depends: HUnit
-  Main-Is: testsrc/runtests.hs
+  Main-Is: runtests.hs
+  Hs-Source-Dirs: src, testsrc
   GHC-Options: -O2
+  Build-Depends: QuickCheck
   Extensions: ExistentialQuantification, OverlappingInstances,
       UndecidableInstances

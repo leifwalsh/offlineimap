@@ -16,11 +16,28 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 -}
 
-module Main where 
+module Main where
+import Test.QuickCheck
+import Test.QuickCheck.Batch
+import qualified Test.HUnit as HU
+import Test.HUnit.Utils
+import qualified Data.Map as Map
 
-import Test.HUnit
--- import Tests
+import Data.Syncable
 
--- main = runTestTT tests
-main = putStrLn "fake"
+prop_empty =
+    syncThem emptymap emptymap emptymap == ([], [], [])
 
+keysToMap :: Ord k => [k] -> Map.Map k ()
+keysToMap = foldl (\map k -> Map.insert k () map) Map.empty
+
+emptymap :: Map.Map Integer ()
+emptymap = Map.empty
+
+allt = [qctest "Empty" prop_empty]
+
+testh = HU.runTestTT $ HU.TestList allt
+         
+main = 
+    do testh
+       return ()
