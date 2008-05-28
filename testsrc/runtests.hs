@@ -32,21 +32,19 @@ prop_empty :: Bool
 prop_empty =
     syncThem emptymap emptymap emptymap == ([], [], []) -- ([DeleteItem 5], [], [])
 
-prop_delAllFromChild :: SyncCollection Int -> Bool
+prop_delAllFromChild :: SyncCollection Int -> Result
 prop_delAllFromChild inp =
     let (resMaster, resChild, resState) = syncThem emptymap inp inp
         expectedResChild = sort . map DeleteItem . Map.keys $ inp
-        in resMaster == [] &&
-           (sort resChild == expectedResChild) &&
-           (sort resState == expectedResChild)
-
-prop_addFromMaster :: SyncCollection Int -> Bool
+        in ([], expectedResChild, expectedResChild) @=? 
+           (resMaster, sort resChild, sort resState)
+           
+prop_addFromMaster :: SyncCollection Int -> Result
 prop_addFromMaster inp =
     let (resMaster, resChild, resState) = syncThem inp emptymap emptymap
         expectedResChild = sort . map CopyItem . Map.keys $ inp
-        in (resMaster == []) &&
-           (sort resChild == expectedResChild) &&
-           (sort resState == expectedResChild)
+        in ([], expectedResChild, expectedResChild) @=? 
+           (resMaster, sort resChild, sort resState)
 
 allt = [qctest "Empty" prop_empty,
         qctest "Del all from child" prop_delAllFromChild]
