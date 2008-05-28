@@ -39,6 +39,13 @@ prop_delAllFromChild inp =
         in ([], expectedResChild) @=? 
            (resMaster, sort resChild)
            
+prop_delAllFromMaster :: SyncCollection Int -> Result
+prop_delAllFromMaster inp =
+    let (resMaster, resChild) = syncThem inp emptymap inp
+        expectedResMaster = sort . map DeleteItem . Map.keys $ inp
+        in (expectedResMaster, []) @=? 
+           (sort resMaster, resChild)
+           
 prop_addFromMaster :: SyncCollection Int -> Result
 prop_addFromMaster inp =
     let (resMaster, resChild) = syncThem inp emptymap emptymap
@@ -47,7 +54,10 @@ prop_addFromMaster inp =
            (resMaster, sort resChild)
 
 allt = [qctest "Empty" prop_empty,
-        qctest "Del all from child" prop_delAllFromChild]
+        qctest "Del all from child" prop_delAllFromChild,
+        qctest "Del all from master" prop_delAllFromMaster,
+        qctest "Add from master" prop_addFromMaster
+       ]
 
 testh = HU.runTestTT $ HU.TestList allt
 testv = runVerbTestText (HU.putTextToHandle stderr True) $ HU.TestList allt
