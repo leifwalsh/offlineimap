@@ -95,10 +95,24 @@ prop_allChanges master child lastchild =
     let (resMaster, resChild) = syncBiDir master child lastchild
         expectedResMaster = sort $
             (map (\(k, v) -> CopyItem k v) . Map.toList . Map.difference child $ Map.union master lastchild) ++
-                                                                                            (map DeleteItem . Map.keys . Map.intersection master $ Map.difference lastchild child)
+                                                                                            (map DeleteItem . Map.keys . Map.intersection master $ Map.difference lastchild child) ++
+            (map (\(k, v) -> ModifyContent k v) masterChanges)
+
         expectedResChild = sort $
             (map (\(k, v) -> CopyItem k v) . Map.toList . Map.difference master $ Map.union child lastchild) ++
-                                                                                            (map DeleteItem . Map.keys . Map.intersection child $ Map.difference lastchild master)
+                                                                                            (map DeleteItem . Map.keys . Map.intersection child $ Map.difference lastchild master) ++
+            (map (\(k, v) -> ModifyContent k v) childChanges)
+
+        childChanges = foldl (changefunc True) [] (Map.toList child)
+        masterChanges = foldl (changefunc False) [] (Map.toList child)
+        changefunc useMaster accum (k, v) =
+            case Map.lookup k master of
+              Nothing -> accum
+              Just x -> if x /= v
+                        then if useMaster
+                             then (k, x) : accum
+                             else (k, v) : accum
+                        else accum
     in (expectedResMaster, expectedResChild) @=?
        (sort resMaster, sort resChild)
 
