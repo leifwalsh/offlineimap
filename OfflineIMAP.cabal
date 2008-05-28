@@ -73,5 +73,4 @@ Executable runtests
   Hs-Source-Dirs: src, testsrc
   GHC-Options: -O2
   Build-Depends: QuickCheck
-  Extensions: ExistentialQuantification, OverlappingInstances,
-      UndecidableInstances
+  Extensions: ExistentialQuantification, FlexibleInstances

@@ -44,6 +44,12 @@ testv = runVerbTestText (HU.putTextToHandle stderr True) $ HU.TestList alltHU
 
 testq = runTests "Test Stuff" defOpt (map (run . snd) allt)
 
+instance (Arbitrary k, Eq k, Ord k) => Arbitrary (Map.Map k ()) where
+    arbitrary = 
+        do items <- arbitrary
+           return $ keysToMap items
+    coarbitrary = coarbitrary . Map.keys
+
 -- Modified from HUnit
 runVerbTestText :: HU.PutText st -> HU.Test -> IO (HU.Counts, st)
 runVerbTestText (HU.PutText put us) t = do
