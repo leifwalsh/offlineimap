@@ -54,12 +54,11 @@ keysToMap = foldl (\map k -> Map.insert k () map) Map.empty
 emptymap :: Map.Map Int ()
 emptymap = Map.empty
 
-allt = [("Empty", prop_empty),
-        ("Del all from child", prop_delAllFromChild)]
-alltHU = map (\(str, prop) -> qctest str prop) allt
+allt = [qctest "Empty" prop_empty,
+        qctest "Del all from child" prop_delAllFromChild]
 
-testh = HU.runTestTT $ HU.TestList alltHU
-testv = runVerbTestText (HU.putTextToHandle stderr True) $ HU.TestList alltHU
+testh = HU.runTestTT $ HU.TestList allt
+testv = runVerbTestText (HU.putTextToHandle stderr True) $ HU.TestList allt
 
 testq = runTests "Test Stuff" defOpt (map (run . snd) allt)
 
