@@ -22,11 +22,11 @@ import Test.QuickCheck.Batch
 import qualified Test.HUnit as HU
 import Test.HUnit.Utils
 import qualified Data.Map as Map
-import System.IO
-import Text.Printf
 import Data.List
+import System.IO(stderr)
 
 import Data.Syncable
+import TestInfrastructure
 
 prop_empty :: Bool
 prop_empty =
@@ -48,43 +48,13 @@ prop_addFromMaster inp =
            (sort resChild == expectedResChild) &&
            (sort resState == expectedResChild)
 
-keysToMap :: Ord k => [k] -> Map.Map k ()
-keysToMap = foldl (\map k -> Map.insert k () map) Map.empty
-
-emptymap :: Map.Map Int ()
-emptymap = Map.empty
-
 allt = [qctest "Empty" prop_empty,
         qctest "Del all from child" prop_delAllFromChild]
 
 testh = HU.runTestTT $ HU.TestList allt
 testv = runVerbTestText (HU.putTextToHandle stderr True) $ HU.TestList allt
 
-testq = runTests "Test Stuff" defOpt (map (run . snd) allt)
-
-instance (Arbitrary k, Eq k, Ord k) => Arbitrary (Map.Map k ()) where
-    arbitrary = 
-        do items <- arbitrary
-           return $ keysToMap items
-    coarbitrary = coarbitrary . Map.keys
-
--- Modified from HUnit
-runVerbTestText :: HU.PutText st -> HU.Test -> IO (HU.Counts, st)
-runVerbTestText (HU.PutText put us) t = do
-  (counts, us') <- HU.performTest reportStart reportError reportFailure us t
-  us'' <- put (HU.showCounts counts) True us'
-  return (counts, us'')
- where
-  reportStart ss us = do hPrintf stderr "\rTesting %-68s\n" (HU.showPath (HU.path ss))
-                         put (HU.showCounts (HU.counts ss)) False us
-  reportError   = reportProblem "Error:"   "Error in:   "
-  reportFailure = reportProblem "Failure:" "Failure in: "
-  reportProblem p0 p1 msg ss us = put line True us
-   where line  = "### " ++ kind ++ path' ++ '\n' : msg
-         kind  = if null path' then p0 else p1
-         path' = HU.showPath (HU.path ss)
-
-         
+        
 main = 
     do testv
        return ()
