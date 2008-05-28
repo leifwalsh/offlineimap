@@ -72,12 +72,17 @@ data (Eq k, Ord k, Show k, Show v) =>
     SyncCommand k v = 
            DeleteItem k
          | CopyItem k v
+         | ModifyContent k v
     deriving (Eq, Ord, Show)
 
 {- | Perform a bi-directional sync.  Compared to the last known state of
 the child, evaluate the new states of the master and child.  Return a list of
 changes to make to the master and list of changes to make to the child to
 bring them into proper sync.
+
+In the event that both master and child previously had an item, and the payload
+of the item has changed on both ends, the payload as given in the child
+will take precedence.
 
 This relationship should hold:
 
@@ -87,8 +92,9 @@ This relationship should hold:
 
 This relationship is validated in the test suite that accompanies this
 software.
+
 -}
-syncBiDir :: (Ord k, Show k, Show v) =>
+syncBiDir :: (Ord k, Show k, Show v, Eq v) =>
             SyncCollection k v  -- ^ Present state of master
          -> SyncCollection k v  -- ^ Present state of child
          -> SyncCollection k v  -- ^ Last state of child
@@ -100,11 +106,23 @@ syncBiDir masterstate childstate lastchildstate =
                           ++ 
                           (map (\(x, y) -> CopyItem x y) .
                            findAdded childstate masterstate $ lastchildstate)
+                          ++ (map (\(x, y) -> ModifyContent x y) . Map.toList $ masterPayloadChanges)
           childchanges = (map DeleteItem . 
                           findDeleted masterstate childstate $ lastchildstate)
                          ++
                          (map (\(x, y) -> CopyItem x y) .
                           findAdded masterstate childstate $ lastchildstate)
+                         ++ (map (\(x, y) -> ModifyContent x y) . Map.toList $ childPayloadChanges)
+          masterPayloadChanges = 
+              findModified childstate lastchildstate
+          -- The child's payload takes precedence, so we are going to
+          -- calculate the changes made on the master to apply to the client,
+          -- then subtract out any items in the master changes that have the
+          -- same key.
+          childPayloadChanges = 
+              foldl (flip Map.delete) (findModified masterstate lastchildstate)
+                    (Map.keys masterPayloadChanges)
+                    
 
 {- | Compares two SyncCollections, and returns the commands that, when
 applied to the first collection, would yield the second. -}
@@ -131,6 +149,14 @@ findAdded :: (Ord k, Eq k) =>
                [(k, v)]
 findAdded state1 state2 lastchildstate =
     Map.toList . Map.difference state1 . Map.union state2 $ lastchildstate
+
+{- Finds all items that exist in both state1 and lastchildstate in which the payload
+is different in state1 than it was in lastchildstate.  Returns the key and new
+payload for each such item found. -}
+findModified :: (Ord k, Eq v) =>
+                SyncCollection k v -> SyncCollection k v -> SyncCollection k v
+findModified state1 lastchildstate =
+    Map.differenceWith (\v1 v2 -> if v1 /= v2 then Just v1 else Nothing) state1 $ lastchildstate
 
 {- | Apply the specified changes to the given SyncCollection.  Returns
 a new SyncCollection with the changes applied.  If changes are specified
