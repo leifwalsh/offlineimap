@@ -5,6 +5,8 @@ all: setup			# GHC build
 	./setup configure
 	./setup build
 
+.PHONY: all
+
 doc: lib/dfs.html/index.html lib/dfs.pdf lib/dfs.ps lib/dfs.txt
 
 hugsbuild: setup
@@ -15,6 +17,9 @@ setup: Setup.lhs OfflineIMAP.cabal
 	ghc -package Cabal Setup.lhs -o setup
 
 clean: clean-code clean-doc
+
+test: all
+	dist/build/runtests/runtests
 
 clean-code:
 	-./setup clean
