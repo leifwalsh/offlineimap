@@ -83,7 +83,7 @@ syncThem masterstate childstate lastchildstate =
     (masterchanges, childchanges, statuschanges)
     where masterchanges = [] 
           childchanges = map DeleteItem masterToChildDeletes
-          statuschanges = []
+          statuschanges = map DeleteItem masterToStatusDeletes
 
 {-
         # Delete local copies of remote messages.  This way,
@@ -96,6 +96,8 @@ syncThem masterstate childstate lastchildstate =
         FIXME: validate logic in situation of new folder here -}
 
           masterToChildDeletes = syncToDelete masterstate childstate
+          masterToStatusDeletes = filterKeys lastchildstate masterToChildDeletes
+
 
 {- | Returns a list of keys that exist in masterstate but not in childstate -}
 syncToDelete :: (Ord k) => 
