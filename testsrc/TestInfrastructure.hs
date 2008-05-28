@@ -36,13 +36,13 @@ expected @=? actual =
 keysToMap :: Ord k => [k] -> Map.Map k ()
 keysToMap = foldl (\map k -> Map.insert k () map) Map.empty
 
-emptymap :: (Eq k, Ord k) => Map.Map k ()
+emptymap :: (Eq k, Ord k, Show v) => Map.Map k v
 emptymap = Map.empty
 
-instance (Arbitrary k, Eq k, Ord k) => Arbitrary (Map.Map k ()) where
+instance (Arbitrary k, Arbitrary v, Eq k, Ord k) => Arbitrary (Map.Map k v) where
     arbitrary = 
         do items <- arbitrary
-           return $ keysToMap items
+           return $ Map.fromList items
     coarbitrary = coarbitrary . Map.keys
 
 -- Modified from HUnit
