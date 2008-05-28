@@ -33,68 +33,68 @@ prop_empty :: Bool
 prop_empty =
     syncBiDir (emptymap::Map.Map Int ()) emptymap emptymap == ([], []) -- ([DeleteItem 5], [], [])
 
-prop_delAllFromChild :: SyncCollection Int -> Result
+prop_delAllFromChild :: SyncCollection Int () -> Result
 prop_delAllFromChild inp =
     let (resMaster, resChild) = syncBiDir emptymap inp inp
         expectedResChild = sort . map DeleteItem . Map.keys $ inp
         in ([], expectedResChild) @=? 
            (resMaster, sort resChild)
            
-prop_delAllFromMaster :: SyncCollection Int -> Result
+prop_delAllFromMaster :: SyncCollection Int () -> Result
 prop_delAllFromMaster inp =
     let (resMaster, resChild) = syncBiDir inp emptymap inp
         expectedResMaster = sort . map DeleteItem . Map.keys $ inp
         in (expectedResMaster, []) @=? 
            (sort resMaster, resChild)
            
-prop_addFromMaster :: SyncCollection Int -> Result
+prop_addFromMaster :: SyncCollection Int () -> Result
 prop_addFromMaster inp =
     let (resMaster, resChild) = syncBiDir inp emptymap emptymap
-        expectedResChild = sort . map CopyItem . Map.keys $ inp
+        expectedResChild = sort . map (\k -> CopyItem k ()) . Map.keys $ inp
         in ([], expectedResChild) @=? 
            (resMaster, sort resChild)
 
-prop_allChangesToChild :: SyncCollection Int -> SyncCollection Int -> Result
+prop_allChangesToChild :: SyncCollection Int () -> SyncCollection Int () -> Result
 prop_allChangesToChild master child =
     let (resMaster, resChild) = syncBiDir master child child
         expectedResChild = sort $
-            (map CopyItem . Map.keys . Map.difference master $ child) ++
+            (map (\k -> CopyItem k ()) . Map.keys . Map.difference master $ child) ++
             (map DeleteItem . Map.keys . Map.difference child $ master)
         in ([], expectedResChild) @=?
            (resMaster, sort resChild)
 
-prop_allChangesToMaster :: SyncCollection Int -> SyncCollection Int -> Result
+prop_allChangesToMaster :: SyncCollection Int () -> SyncCollection Int () -> Result
 prop_allChangesToMaster master child =
     let (resMaster, resChild) = syncBiDir master child master
         expectedResMaster = sort $
-            (map CopyItem . Map.keys . Map.difference child $ master) ++
+            (map (\k -> CopyItem k ()) . Map.keys . Map.difference child $ master) ++
             (map DeleteItem . Map.keys . Map.difference master $ child)
         in (expectedResMaster, []) @=?
            (sort resMaster, resChild)
 
-prop_allChanges :: SyncCollection Int -> SyncCollection Int -> SyncCollection Int -> Result
+prop_allChanges :: SyncCollection Int () -> SyncCollection Int () -> SyncCollection Int () -> Result
 prop_allChanges master child lastchild =
     let (resMaster, resChild) = syncBiDir master child lastchild
         expectedResMaster = sort $
-            (map CopyItem . Map.keys . Map.difference child $ Map.union master lastchild) ++
+            (map (\k -> CopyItem k ()) . Map.keys . Map.difference child $ Map.union master lastchild) ++
                                                                                             (map DeleteItem . Map.keys . Map.intersection master $ Map.difference lastchild child)
         expectedResChild = sort $
-            (map CopyItem . Map.keys . Map.difference master $ Map.union child lastchild) ++
+            (map (\k -> CopyItem k ()) . Map.keys . Map.difference master $ Map.union child lastchild) ++
                                                                                             (map DeleteItem . Map.keys . Map.intersection child $ Map.difference lastchild master)
     in (expectedResMaster, expectedResChild) @=?
        (sort resMaster, sort resChild)
 
 {- | Basic validation that unaryApplyChanges works -}
-prop_unaryApplyChanges :: SyncCollection Int -> [(Bool, Int)] -> Result
+prop_unaryApplyChanges :: SyncCollection Int () -> [(Bool, Int)] -> Result
 prop_unaryApplyChanges collection randcommands =
     let -- We use nubBy to make sure we don't get input that has reference
         -- to the same key more than once.  We then convert True/False to
         -- commands.
         commands = map toCommand . nubBy (\x y -> snd x == snd y) $ randcommands
-        toCommand (True, x) = CopyItem x
+        toCommand (True, x) = CopyItem x ()
         toCommand (False, x) = DeleteItem x
 
-        addedKeys = catMaybes . map (\x -> case x of CopyItem y -> Just y; _ -> Nothing) $ commands
+        addedKeys = catMaybes . map (\x -> case x of CopyItem y _ -> Just y; _ -> Nothing) $ commands
         deletedKeys = catMaybes . map (\x -> case x of DeleteItem y -> Just y; _ -> Nothing) $ commands
         
         collection' = Map.difference collection (keysToMap deletedKeys)
@@ -105,7 +105,7 @@ prop_unaryApplyChanges collection randcommands =
 
 {- | Should validate both that unaryApplyChanges works, and that it is
 an identify -}
-prop_unaryApplyChangesId :: SyncCollection Int -> SyncCollection Int -> Result
+prop_unaryApplyChangesId :: SyncCollection Int () -> SyncCollection Int () -> Result
 prop_unaryApplyChangesId master child =
     let (resMaster, resChild) = syncBiDir master child child
         newMaster = unaryApplyChanges master resMaster
@@ -115,14 +115,14 @@ prop_unaryApplyChangesId master child =
         in (True, sort (Map.keys master), sort (Map.keys master)) @=?
            (newMasterKeys == newChildKeys, newMasterKeys, newChildKeys)
 
-prop_unaryApplyChanges3 :: SyncCollection Int -> SyncCollection Int -> SyncCollection Int -> Result
+prop_unaryApplyChanges3 :: SyncCollection Int () -> SyncCollection Int () -> SyncCollection Int () -> Result
 prop_unaryApplyChanges3 master child lastChild =
     let (resMaster, resChild) = syncBiDir master child lastChild
         newMaster = unaryApplyChanges master resMaster
         newChild = unaryApplyChanges child resChild
     in newMaster @=? newChild
 
-prop_diffCollection :: SyncCollection Int -> SyncCollection Int -> Result
+prop_diffCollection :: SyncCollection Int () -> SyncCollection Int () -> Result
 prop_diffCollection coll1 coll2 = 
     let commands = diffCollection coll1 coll2
         newcoll2 = unaryApplyChanges coll1 commands

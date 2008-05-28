@@ -66,12 +66,12 @@ call forgetfolders on local and remote
 module Data.Syncable where
 import qualified Data.Map as Map
 
-type SyncCollection k = Map.Map k ()
+type SyncCollection k v = Map.Map k v
 
-data (Eq k, Ord k, Show k) => 
-    SyncCommand k = 
+data (Eq k, Ord k, Show k, Show v) => 
+    SyncCommand k v = 
            DeleteItem k
-         | CopyItem k
+         | CopyItem k v
     deriving (Eq, Ord, Show)
 
 {- | Perform a bi-directional sync.  Compared to the last known state of
@@ -88,38 +88,38 @@ This relationship should hold:
 This relationship is validated in the test suite that accompanies this
 software.
 -}
-syncBiDir :: (Ord k, Show k) =>
-            SyncCollection k  -- ^ Present state of master
-         -> SyncCollection k  -- ^ Present state of child
-         -> SyncCollection k  -- ^ Last state of child
-         -> ([SyncCommand k], [SyncCommand k]) -- ^ Changes to make to (master, child)
+syncBiDir :: (Ord k, Show k, Show v) =>
+            SyncCollection k v  -- ^ Present state of master
+         -> SyncCollection k v  -- ^ Present state of child
+         -> SyncCollection k v  -- ^ Last state of child
+         -> ([SyncCommand k v], [SyncCommand k v]) -- ^ Changes to make to (master, child)
 syncBiDir masterstate childstate lastchildstate =
     (masterchanges, childchanges)
     where masterchanges = (map DeleteItem .
                           findDeleted childstate masterstate $ lastchildstate)
                           ++ 
-                          (map CopyItem .
+                          (map (\(x, y) -> CopyItem x y) .
                            findAdded childstate masterstate $ lastchildstate)
           childchanges = (map DeleteItem . 
                           findDeleted masterstate childstate $ lastchildstate)
                          ++
-                         (map CopyItem .
+                         (map (\(x, y) -> CopyItem x y) .
                           findAdded masterstate childstate $ lastchildstate)
 
 {- | Compares two SyncCollections, and returns the commands that, when
 applied to the first collection, would yield the second. -}
-diffCollection :: (Ord k, Show k) => 
-                  SyncCollection k
-               -> SyncCollection k
-               -> [SyncCommand k]
+diffCollection :: (Ord k, Show k, Show v) => 
+                  SyncCollection k v
+               -> SyncCollection k v
+               -> [SyncCommand k v]
 diffCollection coll1 coll2 = 
     (map DeleteItem . findDeleted coll2 coll1 $ coll1) ++
-    (map CopyItem . findDeleted coll1 coll2 $ coll2)
+    (map (\(k, v) -> CopyItem k v) . findAdded coll2 coll1 $ coll1)
 
 {- | Returns a list of keys that exist in state2 and lastchildstate
 but not in state1 -}
 findDeleted :: Ord k =>
-               SyncCollection k -> SyncCollection k -> SyncCollection k ->
+               SyncCollection k v -> SyncCollection k v -> SyncCollection k v ->
                [k]
 findDeleted state1 state2 lastchildstate =
     Map.keys . Map.difference (Map.intersection state2 lastchildstate) $ state1
@@ -127,30 +127,20 @@ findDeleted state1 state2 lastchildstate =
 {- | Returns a list of keys that exist in state1 but in neither 
 state2 nor lastchildstate -}
 findAdded :: (Ord k, Eq k) =>
-               SyncCollection k -> SyncCollection k -> SyncCollection k ->
-               [k]
+               SyncCollection k v -> SyncCollection k v -> SyncCollection k v ->
+               [(k, v)]
 findAdded state1 state2 lastchildstate =
-    Map.keys . Map.difference state1 . Map.union state2 $ lastchildstate
-
-{- | Returns a list of keys that exist in the passed state -}
-filterKeys :: (Ord k) => 
-              SyncCollection k -> [k] -> [k]
-filterKeys state keylist =
-    concatMap keyfunc keylist
-    where keyfunc k =
-              case Map.lookup k state of
-                Nothing -> []
-                Just _ -> [k]
+    Map.toList . Map.difference state1 . Map.union state2 $ lastchildstate
 
 {- | Apply the specified changes to the given SyncCollection.  Returns
 a new SyncCollection with the changes applied.  If changes are specified
 that would apply to UIDs that do not exist in the source list, these changes
 are silently ignored. -}
-unaryApplyChanges :: (Eq k, Ord k, Show k) => 
-                     SyncCollection k -> [SyncCommand k] -> SyncCollection k
+unaryApplyChanges :: (Eq k, Ord k, Show k, Show v) => 
+                     SyncCollection k v -> [SyncCommand k v] -> SyncCollection k v
 unaryApplyChanges collection commands =
     let makeChange collection (DeleteItem key) =
             Map.delete key collection
-        makeChange collection (CopyItem key) =
-            Map.insert key () collection
+        makeChange collection (CopyItem key val) =
+            Map.insert key val collection
     in foldl makeChange collection commands
