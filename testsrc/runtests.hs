@@ -53,10 +53,30 @@ prop_addFromMaster inp =
         in ([], expectedResChild) @=? 
            (resMaster, sort resChild)
 
+prop_allChangesToChild :: SyncCollection Int -> SyncCollection Int -> Result
+prop_allChangesToChild master child =
+    let (resMaster, resChild) = syncThem master child child
+        expectedResChild = sort $
+            (map CopyItem . Map.keys . Map.difference master $ child) ++
+            (map DeleteItem . Map.keys . Map.difference child $ master)
+        in ([], expectedResChild) @=?
+           (resMaster, sort resChild)
+
+prop_allChangesToMaster :: SyncCollection Int -> SyncCollection Int -> Result
+prop_allChangesToMaster master child =
+    let (resMaster, resChild) = syncThem master child master
+        expectedResMaster = sort $
+            (map CopyItem . Map.keys . Map.difference child $ master) ++
+            (map DeleteItem . Map.keys . Map.difference master $ child)
+        in (expectedResMaster, []) @=?
+           (sort resMaster, resChild)
+
 allt = [qctest "Empty" prop_empty,
         qctest "Del all from child" prop_delAllFromChild,
         qctest "Del all from master" prop_delAllFromMaster,
-        qctest "Add from master" prop_addFromMaster
+        qctest "Add from master" prop_addFromMaster,
+        qctest "All changes to child" prop_allChangesToChild,
+        qctest "All changes to master" prop_allChangesToMaster
        ]
 
 testh = HU.runTestTT $ HU.TestList allt
