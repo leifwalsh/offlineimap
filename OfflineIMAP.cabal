@@ -64,11 +64,12 @@ Library
 Executable offlineimap
   Main-Is: src/offlineimap.hs
   GHC-Options: -O2
-
   Extensions: ExistentialQuantification, OverlappingInstances,
       UndecidableInstances
 
 Executable runtests
+  Build-Depends: HUnit
   Main-Is: testsrc/runtests.hs
-    Extensions: ExistentialQuantification, OverlappingInstances,
+  GHC-Options: -O2
+  Extensions: ExistentialQuantification, OverlappingInstances,
       UndecidableInstances

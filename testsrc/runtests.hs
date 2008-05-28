@@ -19,8 +19,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 module Main where 
 
 import Test.HUnit
-# import Tests
+-- import Tests
 
-#main = runTestTT tests
+-- main = runTestTT tests
 main = putStrLn "fake"
 
