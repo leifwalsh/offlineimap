@@ -36,7 +36,7 @@ expected @=? actual =
 keysToMap :: Ord k => [k] -> Map.Map k ()
 keysToMap = foldl (\map k -> Map.insert k () map) Map.empty
 
-emptymap :: Map.Map Int ()
+emptymap :: (Eq k, Ord k) => Map.Map k ()
 emptymap = Map.empty
 
 instance (Arbitrary k, Eq k, Ord k) => Arbitrary (Map.Map k ()) where

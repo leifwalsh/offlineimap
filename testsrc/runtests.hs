@@ -30,7 +30,7 @@ import TestInfrastructure
 
 prop_empty :: Bool
 prop_empty =
-    syncThem emptymap emptymap emptymap == ([], []) -- ([DeleteItem 5], [], [])
+    syncThem (emptymap::Map.Map Int ()) emptymap emptymap == ([], []) -- ([DeleteItem 5], [], [])
 
 prop_delAllFromChild :: SyncCollection Int -> Result
 prop_delAllFromChild inp =
