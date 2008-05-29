@@ -216,3 +216,17 @@ unaryApplyChanges collection commands =
         makeChange collection (ModifyContent key val) =
             Map.adjust (\_ -> val) key collection
     in foldl makeChange collection commands
+
+{- | Given the base input and a ModifyContent command, convert this to
+commands to sync.  Ignores anything that is not a ModifyContent command
+by returning an empty list. -}
+modifyToSync :: (Eq k, Ord k, Show k) =>
+                SyncCollection k v
+             -> SyncCommand k v
+             -> [SyncCommand k v]
+modifyToSync base (ModifyContent k v) =
+    case Map.lookup k base of
+      Nothing -> error $ "modifyToSync: attempt to modify on unknown base key " ++ show k
+      Just basev ->
+          diffCollection basev v
+modifyToSync _ _ = []

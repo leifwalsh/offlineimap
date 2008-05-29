@@ -185,6 +185,13 @@ prop_diffCollection coll1 coll2 =
         newcoll2 = unaryApplyChanges coll1 commands
         in coll2 @=? newcoll2
 
+prop_modifyToSyncSimple :: SyncCollection Int Word8 -> Word8 -> Result
+prop_modifyToSyncSimple base newv
+    | Map.empty base = True @=? True
+    | otherwise = ([], [], [ModifyContent @=?
+    where k = fst . head . Map.toList base
+prop_modifyToSync 
+
 q :: Testable a => String -> a -> HU.Test
 q = qccheck (defaultConfig {configMaxTest = 250})
 
