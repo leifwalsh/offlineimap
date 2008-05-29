@@ -23,6 +23,7 @@ import qualified Test.HUnit as HU
 import qualified Data.Map as Map
 import System.IO
 import Text.Printf
+import System.Random
 
 (@=?) :: (Eq a, Show a) => a -> a -> Result
 expected @=? actual = 
@@ -44,6 +45,16 @@ instance (Arbitrary k, Arbitrary v, Eq k, Ord k) => Arbitrary (Map.Map k v) wher
         do items <- arbitrary
            return $ Map.fromList items
     coarbitrary = coarbitrary . Map.keys
+
+instance Arbitrary Word8 where
+    arbitrary = sized $ \n -> choose (0, min (fromIntegral n) maxBound)
+    coarbitrary n = variant (if n >= 0 then 2 * x else 2 * x + 1)
+                where x = abs . fromIntegral $ n
+
+instance Random Word8 where
+    randomR (a, b) g = (\(x, y) -> (fromInteger x, y)) $
+                       randomR (toInteger a, toInteger b) g
+    random g = randomR (minBound, maxBound) g
 
 -- Modified from HUnit
 runVerbTestText :: HU.PutText st -> HU.Test -> IO (HU.Counts, st)
