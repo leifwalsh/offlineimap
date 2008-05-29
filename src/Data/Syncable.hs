@@ -179,4 +179,6 @@ unaryApplyChanges collection commands =
             Map.delete key collection
         makeChange collection (CopyItem key val) =
             Map.insert key val collection
+        makeChange collection (ModifyContent key val) =
+            Map.insert key val collection
     in foldl makeChange collection commands
