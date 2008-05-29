@@ -63,7 +63,7 @@ prop_allChangesToChild master child =
         expectedResChild = sort $
             (map (\(k, v) -> CopyItem k v) . Map.toList . Map.difference master $ child) ++
             (map DeleteItem . Map.keys . Map.difference child $ master) ++
-            (map (pairToFunc ModifyContent) changeList)
+            (map (pairToFunc SetContent) changeList)
         changeList = foldl changefunc [] (Map.toList child)
         changefunc accum (k, v) =
             case Map.lookup k master of
@@ -80,7 +80,7 @@ prop_allChangesToMaster master child =
         expectedResMaster = sort $
             (map (pairToFunc CopyItem) . Map.toList . Map.difference child $ master) ++
             (map DeleteItem . Map.keys . Map.difference master $ child) ++
-            (map (pairToFunc ModifyContent) changeList)
+            (map (pairToFunc SetContent) changeList)
         changeList = foldl changefunc [] (Map.toList child)
         changefunc accum (k, v) =
             case Map.lookup k master of
@@ -131,12 +131,12 @@ prop_allChanges master child lastchild =
         expectedResMaster = sort $
             (map (pairToFunc CopyItem) . Map.toList . Map.difference child $ Map.union master lastchild) ++
                                                                                             (map DeleteItem . Map.keys . Map.intersection master $ Map.difference lastchild child) ++
-            (map (pairToFunc ModifyContent) masterMods)
+            (map (pairToFunc SetContent) masterMods)
 
         expectedResChild = sort $
             (map (pairToFunc CopyItem) . Map.toList . Map.difference master $ Map.union child lastchild) ++
                                                                                             (map DeleteItem . Map.keys . Map.intersection child $ Map.difference lastchild master) ++
-            (map (pairToFunc ModifyContent) childMods)
+            (map (pairToFunc SetContent) childMods)
 
     in (expectedResMaster, expectedResChild) @=?
        (sort resMaster, sort resChild)

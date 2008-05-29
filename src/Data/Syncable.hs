@@ -72,7 +72,7 @@ data (Eq k, Ord k, Show k, Show v) =>
     SyncCommand k v = 
            DeleteItem k
          | CopyItem k v
-         | ModifyContent k v
+         | SetContent k v
     deriving (Eq, Ord, Show)
 
 pairToFunc :: (a -> b -> c) -> (a, b) -> c
@@ -110,13 +110,13 @@ syncBiDir masterstate childstate lastchildstate =
                           ++ 
                           (map (pairToFunc CopyItem) .
                            findAdded childstate masterstate $ lastchildstate)
-                          ++ (map (pairToFunc ModifyContent) . Map.toList $ masterPayloadChanges)
+                          ++ (map (pairToFunc SetContent) . Map.toList $ masterPayloadChanges)
           childchanges = (map DeleteItem . 
                           findDeleted masterstate childstate $ lastchildstate)
                          ++
                          (map (pairToFunc CopyItem) .
                           findAdded masterstate childstate $ lastchildstate)
-                         ++ (map (pairToFunc ModifyContent) . Map.toList $ childPayloadChanges)
+                         ++ (map (pairToFunc SetContent) . Map.toList $ childPayloadChanges)
           masterPayloadChanges = 
               Map.union 
                  (findModified masterstate childstate childstate lastchildstate)
@@ -143,7 +143,7 @@ diffCollection coll1 coll2 =
     (map (pairToFunc CopyItem) . findAdded coll2 coll1 $ coll1) ++
     modifiedData
     where modifiedData = 
-              map (pairToFunc ModifyContent) .
+              map (pairToFunc SetContent) .
               Map.toList . 
               Map.mapMaybe id .
               Map.intersectionWith compareFunc coll1 $ coll2
@@ -153,7 +153,7 @@ diffCollection coll1 coll2 =
               
                          
     {-
-    (map (pairToFunc ModifyContent) . Map.toList .
+    (map (pairToFunc SetContent) . Map.toList .
          findModified coll1 coll2 $ coll1)
      -}
 
@@ -213,18 +213,18 @@ unaryApplyChanges collection commands =
             Map.delete key collection
         makeChange collection (CopyItem key val) =
             Map.insert key val collection
-        makeChange collection (ModifyContent key val) =
+        makeChange collection (SetContent key val) =
             Map.adjust (\_ -> val) key collection
     in foldl makeChange collection commands
 
-{- | Given the base input and a ModifyContent command, convert this to
-commands to sync.  Ignores anything that is not a ModifyContent command
+{- | Given the base input and a SetContent command, convert this to
+commands to sync.  Ignores anything that is not a SetContent command
 by returning an empty list. -}
 modifyToSync :: (Eq k, Ord k, Show k, Eq v, Show v, Eq v', Show v', Ord v) =>
                 SyncCollection k (SyncCollection v v')
              -> SyncCommand k (SyncCollection v v')
              -> [SyncCommand v v']
-modifyToSync base (ModifyContent key val) =
+modifyToSync base (SetContent key val) =
     case Map.lookup key base of
       Nothing -> error $ "modifyToSync: attempt to modify on unknown base key " ++ show key
       Just basev ->
