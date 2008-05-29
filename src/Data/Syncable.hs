@@ -118,8 +118,11 @@ syncBiDir masterstate childstate lastchildstate =
                           findAdded masterstate childstate $ lastchildstate)
                          ++ (map (pairToFunc ModifyContent) . Map.toList $ childPayloadChanges)
           masterPayloadChanges = 
-              Map.union (findModified masterstate childstate childstate lastchildstate)
-                 (findModified masterstate childstate childstate masterstate)
+              Map.union 
+                 (findModified masterstate childstate childstate lastchildstate)
+                 (findModified masterstate childstate reducedChildState masterstate)
+              where reducedChildState = 
+                        Map.difference childstate lastchildstate
                  
           -- The child's payload takes precedence, so we are going to
           -- calculate the changes made on the master to apply to the client,
@@ -184,7 +187,9 @@ findModified basestate authoritativestate comparisonstate laststate =
                         (Just basev, Just authv) ->
                             if (authv /= lastv) && (authv /= basev)
                                then Just authv
-                               else Nothing
+                               else if compv /= basev
+                                    then Just compv
+                                    else Nothing
 
 {- | Apply the specified changes to the given SyncCollection.  Returns
 a new SyncCollection with the changes applied.  If changes are specified
