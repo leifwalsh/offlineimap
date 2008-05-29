@@ -126,9 +126,9 @@ syncBiDir masterstate childstate lastchildstate =
           -- then subtract out any items in the master changes that have the
           -- same key.
           childPayloadChanges = 
-              foldl (\m (k, v) -> Map.adjust (\_ -> v) k m)
+              Map.difference
                         (findModified childstate masterstate lastchildstate)
-                        (Map.toList $ findModified masterstate childstate lastchildstate)
+                        (findModified masterstate childstate lastchildstate)
 
 {- | Compares two SyncCollections, and returns the commands that, when
 applied to the first collection, would yield the second. -}
