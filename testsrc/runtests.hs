@@ -71,16 +71,7 @@ prop_allChangesToChild master child =
               Just x -> if x /= v
                         then (k, x) : accum
                         else accum
-        masterChanges = map (pairToFunc ModifyContent) . catMaybes .
-                        map checkIt . Map.toList . Map.intersection child
-                            $ master
-            where checkIt (k, v) = 
-                      case Map.lookup k master of
-                        Nothing -> Nothing
-                        Just v' -> if v /= v'
-                                   then Just (k, v)
-                                   else Nothing
-        in (sort masterChanges, expectedResChild) @=?
+        in ([], expectedResChild) @=?
            (sort resMaster, sort resChild)
 
 prop_allChangesToMaster :: SyncCollection Int Word8 -> SyncCollection Int Word8 -> Result
