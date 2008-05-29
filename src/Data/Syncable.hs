@@ -220,13 +220,13 @@ unaryApplyChanges collection commands =
 {- | Given the base input and a ModifyContent command, convert this to
 commands to sync.  Ignores anything that is not a ModifyContent command
 by returning an empty list. -}
-modifyToSync :: (Eq k, Ord k, Show k) =>
-                SyncCollection k v
-             -> SyncCommand k v
-             -> [SyncCommand k v]
-modifyToSync base (ModifyContent k v) =
-    case Map.lookup k base of
-      Nothing -> error $ "modifyToSync: attempt to modify on unknown base key " ++ show k
+modifyToSync :: (Eq k, Ord k, Show k, Eq v, Show v, Eq v', Show v', Ord v) =>
+                SyncCollection k (SyncCollection v v')
+             -> SyncCommand k (SyncCollection v v')
+             -> [SyncCommand v v']
+modifyToSync base (ModifyContent key val) =
+    case Map.lookup key base of
+      Nothing -> error $ "modifyToSync: attempt to modify on unknown base key " ++ show key
       Just basev ->
-          diffCollection basev v
+          diffCollection basev val
 modifyToSync _ _ = []
