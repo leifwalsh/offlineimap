@@ -118,28 +118,17 @@ syncBiDir masterstate childstate lastchildstate =
                           findAdded masterstate childstate $ lastchildstate)
                          ++ (map (pairToFunc ModifyContent) . Map.toList $ childPayloadChanges)
           masterPayloadChanges = 
-                 (Map.filterWithKey filterKV
-                     (Map.intersection 
-                         (Map.union (findModified childstate lastchildstate)
-                                    (findModified childstate masterstate)
-                         )
-                         masterstate
-                     )
-                 )
-              where filterKV k v = -- Eliminate changes that would set the value to what it already is
-                        case Map.lookup k masterstate of
-                          (Just m) -> m /= v 
-                          Nothing -> False
+              Map.union (findModified masterstate childstate lastchildstate)
+                        (findModified masterstate childstate masterstate)
                  
           -- The child's payload takes precedence, so we are going to
           -- calculate the changes made on the master to apply to the client,
           -- then subtract out any items in the master changes that have the
           -- same key.
           childPayloadChanges = 
-              Map.intersection
-                 (Map.difference (findModified masterstate lastchildstate)
-                  (findModified childstate lastchildstate))
-                 childstate
+              foldl (\m (k, v) -> Map.adjust (\_ -> v) k m)
+                        (findModified childstate masterstate lastchildstate)
+                        (Map.toList $ findModified masterstate childstate lastchildstate)
 
 {- | Compares two SyncCollections, and returns the commands that, when
 applied to the first collection, would yield the second. -}
@@ -171,11 +160,19 @@ findAdded state1 state2 lastchildstate =
 is different in state1 than it was in lastchildstate.  Returns the key and new
 payload for each such item found. -}
 findModified :: (Ord k, Eq v) =>
-                SyncCollection k v -> SyncCollection k v -> SyncCollection k v
-findModified state1 lastchildstate =
+                SyncCollection k v -> SyncCollection k v -> SyncCollection k v -> SyncCollection k v
+findModified basestate state1 lastchildstate =
     Map.mapMaybe id .  
-    Map.intersectionWith (\v1 v2 -> if v1 /= v2 then Just v1 else Nothing) 
-       state1 $ lastchildstate
+    Map.intersectionWithKey comparefunc state1 $ lastchildstate
+    where comparefunc k v1 v2 =
+              if v1 /= v2
+                 then case Map.lookup k basestate of
+                        Nothing -> Nothing
+                        Just baseval ->
+                            if baseval == v1
+                               then Nothing
+                               else Just v1
+                 else Nothing
 
 {- | Apply the specified changes to the given SyncCollection.  Returns
 a new SyncCollection with the changes applied.  If changes are specified
