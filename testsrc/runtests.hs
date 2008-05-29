@@ -104,44 +104,37 @@ prop_allChangesToMaster master child =
 prop_allChanges :: SyncCollection Int Float -> SyncCollection Int Float -> SyncCollection Int Float -> Result
 prop_allChanges master child lastchild =
     let (resMaster, resChild) = syncBiDir master child lastchild
-        masterChildCommon = 
-            Map.fromList . catMaybes . map procKV . Map.toList . Map.union
-                (Map.intersection master lastchild) $
-                (Map.intersection child master)
-            where procKV (k, v) =
-                      case (Map.lookup k master, Map.lookup k child,
-                            Map.lookup k lastchild) of
-                        (Just m, Just c, Just lc) ->
-                            if lc == c 
-                               then if lc == m
-                                    then Nothing
-                                    else Just (k, m)
-                               else Just (k, c)
-                        (Just m, Just c, Nothing) -> 
-                            if m == c
-                               then Nothing
-                               else Just (k, c)
-                        (Just m, Nothing, Just lc) ->
-                            if m == lc
-                               then Nothing
-                               else Just (k, m)
-                        (Nothing, Just c, Just lc) ->
-                            if c == lc
-                               then Nothing
-                               else Just (k, c)
-                        _ -> Nothing
-                               
-        masterMods = findNewMods masterChildCommon master
-        childMods = findNewMods masterChildCommon child
 
-        findNewMods :: (Eq a, Ord a, Eq b) => SyncCollection a b -> SyncCollection a b -> [(a, b)]
-        findNewMods common orig = catMaybes . map checkKV . Map.toList $ common
-            where checkKV (k, v) =
-                      case Map.lookup k orig of
-                        Just v' -> if v' == v
-                                   then Nothing
-                                   else Just (k, v)
-                        Nothing -> Nothing
+        masterMods = catMaybes . map procKV $ (Map.toList master)
+            where procKV (k, m) =
+                      case (Map.lookup k child, Map.lookup k lastchild) of
+                        (Just c, Just lc) -> 
+                            if c == lc -- child didn't change
+                               then Nothing
+                               else if c == m -- child and master changed
+                                    then Nothing
+                                    else Just (k, c) -- child changed, master didn't
+                        (Nothing, Just lc) -> Nothing -- deleted on child
+                        (Just c, Nothing) -> -- New on both c and m
+                            if c == m        -- Added the same
+                               then Nothing
+                               else Just (k, c) -- Added but differ
+                        (Nothing, Nothing) -> Nothing -- New to master only
+
+        childMods = catMaybes . map procKV $ (Map.toList child)
+            where procKV (k, c) =
+                      case (Map.lookup k master, Map.lookup k lastchild) of
+                        (Just m, Just lc) -> 
+                            if lc == c 
+                               then if c == m
+                                       then Nothing
+                                       else Just (k, m)
+                               else Nothing
+                        (Nothing, Just lc) ->        -- deleted; nothing to see here
+                                              Nothing
+                        (Just m, Nothing) -> -- New on both; child takes precedence
+                           Nothing
+                        (Nothing, Nothing) -> Nothing -- New to child only
 
         expectedResMaster = sort $
             (map (pairToFunc CopyItem) . Map.toList . Map.difference child $ Map.union master lastchild) ++
