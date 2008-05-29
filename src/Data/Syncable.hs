@@ -140,7 +140,18 @@ diffCollection :: (Ord k, Show k, Eq v, Show v) =>
                -> [SyncCommand k v]
 diffCollection coll1 coll2 = 
     (map DeleteItem . findDeleted coll2 coll1 $ coll1) ++
-    (map (pairToFunc CopyItem) . findAdded coll2 coll1 $ coll1)
+    (map (pairToFunc CopyItem) . findAdded coll2 coll1 $ coll1) ++
+    modifiedData
+    where modifiedData = 
+              map (pairToFunc ModifyContent) .
+              Map.toList . 
+              Map.mapMaybe id .
+              Map.intersectionWith compareFunc coll1 $ coll2
+          compareFunc v1 v2
+              | v1 /= v2 = Just v2
+              | otherwise = Nothing
+              
+                         
     {-
     (map (pairToFunc ModifyContent) . Map.toList .
          findModified coll1 coll2 $ coll1)
