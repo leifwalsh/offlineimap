@@ -132,13 +132,15 @@ syncBiDir masterstate childstate lastchildstate =
 
 {- | Compares two SyncCollections, and returns the commands that, when
 applied to the first collection, would yield the second. -}
-diffCollection :: (Ord k, Show k, Show v) => 
+diffCollection :: (Ord k, Show k, Eq v, Show v) => 
                   SyncCollection k v
                -> SyncCollection k v
                -> [SyncCommand k v]
 diffCollection coll1 coll2 = 
     (map DeleteItem . findDeleted coll2 coll1 $ coll1) ++
-    (map (pairToFunc CopyItem) . findAdded coll2 coll1 $ coll1)
+    (map (pairToFunc CopyItem) . findAdded coll2 coll1 $ coll1) ++
+    (map (pairToFunc ModifyContent) . Map.toList .
+         findModified coll1 coll2 $ coll1)
 
 {- | Returns a list of keys that exist in state2 and lastchildstate
 but not in state1 -}
