@@ -118,10 +118,19 @@ syncBiDir masterstate childstate lastchildstate =
                           findAdded masterstate childstate $ lastchildstate)
                          ++ (map (pairToFunc ModifyContent) . Map.toList $ childPayloadChanges)
           masterPayloadChanges = 
-              Map.intersection
-                 (Map.union (findModified childstate lastchildstate)
-                  (findModified childstate masterstate))
-                 masterstate
+                 (Map.filterWithKey filterKV
+                     (Map.intersection 
+                         (Map.union (findModified childstate lastchildstate)
+                                    (findModified childstate masterstate)
+                         )
+                         masterstate
+                     )
+                 )
+              where filterKV k v = -- Eliminate changes that would set the value to what it already is
+                        case Map.lookup k masterstate of
+                          (Just m) -> m /= v 
+                          Nothing -> False
+                 
           -- The child's payload takes precedence, so we are going to
           -- calculate the changes made on the master to apply to the client,
           -- then subtract out any items in the master changes that have the
