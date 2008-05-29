@@ -104,7 +104,33 @@ prop_allChangesToMaster master child =
 prop_allChanges :: SyncCollection Int Float -> SyncCollection Int Float -> SyncCollection Int Float -> Result
 prop_allChanges master child lastchild =
     let (resMaster, resChild) = syncBiDir master child lastchild
-        masterChildCommon = findModified child master
+        masterChildCommon = 
+            Map.fromList . catMaybes . map procKV . Map.toList . Map.union
+                (Map.intersection master lastchild) $
+                (Map.intersection child master)
+            where procKV (k, v) =
+                      case (Map.lookup k master, Map.lookup k child,
+                            Map.lookup k lastchild) of
+                        (Just m, Just c, Just lc) ->
+                            if lc == c 
+                               then if lc == m
+                                    then Nothing
+                                    else Just (k, m)
+                               else Just (k, c)
+                        (Just m, Just c, Nothing) -> 
+                            if m == c
+                               then Nothing
+                               else Just (k, c)
+                        (Just m, Nothing, Just lc) ->
+                            if m == lc
+                               then Nothing
+                               else Just (k, m)
+                        (Nothing, Just c, Just lc) ->
+                            if c == lc
+                               then Nothing
+                               else Just (k, c)
+                        _ -> Nothing
+                               
         masterMods = findNewMods masterChildCommon master
         childMods = findNewMods masterChildCommon child
 
