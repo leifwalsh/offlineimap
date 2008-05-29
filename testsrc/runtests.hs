@@ -193,17 +193,20 @@ prop_diffCollection coll1 coll2 =
         newcoll2 = unaryApplyChanges coll1 commands
         in coll2 @=? newcoll2
 
-allt = [qctest "Empty" prop_empty,
-        qctest "Del all from child" prop_delAllFromChild,
-        qctest "Del all from master" prop_delAllFromMaster,
-        qctest "Add from master" prop_addFromMaster,
-        qctest "All changes to child" prop_allChangesToChild,
-        qctest "All changes to master" prop_allChangesToMaster,
-        qctest "All changes" prop_allChanges,
-        qctest "unaryApplyChanges" prop_unaryApplyChanges,
-        qctest "unaryApplyChangesId" prop_unaryApplyChangesId,
-        qctest "unaryApplyChanges3" prop_unaryApplyChanges3,
-        qctest "diffCollection" prop_diffCollection
+q :: Testable a => String -> a -> HU.Test
+q = qccheck defaultConfig
+
+allt = [q "Empty" prop_empty,
+        q "Del all from child" prop_delAllFromChild,
+        q "Del all from master" prop_delAllFromMaster,
+        q "Add from master" prop_addFromMaster,
+        q "All changes to child" prop_allChangesToChild,
+        q "All changes to master" prop_allChangesToMaster,
+        q "All changes" prop_allChanges,
+        q "unaryApplyChanges" prop_unaryApplyChanges,
+        q "unaryApplyChangesId" prop_unaryApplyChangesId,
+        q "unaryApplyChanges3" prop_unaryApplyChanges3,
+        q "diffCollection" prop_diffCollection
        ]
 
 testh = HU.runTestTT $ HU.TestList allt
