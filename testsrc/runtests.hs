@@ -62,7 +62,7 @@ prop_allChangesToChild master child =
         expectedResChild = sort $
             (map (\(k, v) -> CopyItem k v) . Map.toList . Map.difference master $ child) ++
             (map DeleteItem . Map.keys . Map.difference child $ master) ++
-            (map (\(k, v) -> ModifyContent k v) changeList)
+            (map (pairToFunc ModifyContent) changeList)
         changeList = foldl changefunc [] (Map.toList child)
         changefunc accum (k, v) =
             case Map.lookup k master of
@@ -70,8 +70,17 @@ prop_allChangesToChild master child =
               Just x -> if x /= v
                         then (k, x) : accum
                         else accum
-        in ([], expectedResChild) @=?
-           (resMaster, sort resChild)
+        masterChanges = map (pairToFunc ModifyContent) . catMaybes .
+                        map checkIt . Map.toList . Map.intersection child
+                            $ master
+            where checkIt (k, v) = 
+                      case Map.lookup k master of
+                        Nothing -> Nothing
+                        Just v' -> if v /= v'
+                                   then Just (k, v)
+                                   else Nothing
+        in (sort masterChanges, expectedResChild) @=?
+           (sort resMaster, sort resChild)
 
 prop_allChangesToMaster :: SyncCollection Int Float -> SyncCollection Int Float -> Result
 prop_allChangesToMaster master child =
