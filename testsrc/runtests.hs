@@ -77,9 +77,9 @@ prop_allChangesToMaster :: SyncCollection Int Float -> SyncCollection Int Float 
 prop_allChangesToMaster master child =
     let (resMaster, resChild) = syncBiDir master child master
         expectedResMaster = sort $
-            (map (\(k, v) -> CopyItem k v) . Map.toList . Map.difference child $ master) ++
+            (map (pairToFunc CopyItem) . Map.toList . Map.difference child $ master) ++
             (map DeleteItem . Map.keys . Map.difference master $ child) ++
-            (map (\(k, v) -> ModifyContent k v) changeList)
+            (map (pairToFunc ModifyContent) changeList)
         changeList = foldl changefunc [] (Map.toList child)
         changefunc accum (k, v) =
             case Map.lookup k master of
@@ -90,29 +90,34 @@ prop_allChangesToMaster master child =
         in (expectedResMaster, []) @=?
            (sort resMaster, resChild)
 
+-- FIXME: test findModified
+
 prop_allChanges :: SyncCollection Int Float -> SyncCollection Int Float -> SyncCollection Int Float -> Result
 prop_allChanges master child lastchild =
     let (resMaster, resChild) = syncBiDir master child lastchild
+        masterChildCommon = findModified child master
+        masterMods = findNewMods masterChildCommon master
+        childMods = findNewMods masterChildCommon child
+
+        findNewMods :: (Eq a, Ord a, Eq b) => SyncCollection a b -> SyncCollection a b -> [(a, b)]
+        findNewMods common orig = catMaybes . map checkKV . Map.toList $ common
+            where checkKV (k, v) =
+                      case Map.lookup k orig of
+                        Just v' -> if v' == v
+                                   then Nothing
+                                   else Just (k, v)
+                        Nothing -> Nothing
+
         expectedResMaster = sort $
-            (map (\(k, v) -> CopyItem k v) . Map.toList . Map.difference child $ Map.union master lastchild) ++
+            (map (pairToFunc CopyItem) . Map.toList . Map.difference child $ Map.union master lastchild) ++
                                                                                             (map DeleteItem . Map.keys . Map.intersection master $ Map.difference lastchild child) ++
-            (map (\(k, v) -> ModifyContent k v) masterChanges)
+            (map (pairToFunc ModifyContent) masterMods)
 
         expectedResChild = sort $
-            (map (\(k, v) -> CopyItem k v) . Map.toList . Map.difference master $ Map.union child lastchild) ++
+            (map (pairToFunc CopyItem) . Map.toList . Map.difference master $ Map.union child lastchild) ++
                                                                                             (map DeleteItem . Map.keys . Map.intersection child $ Map.difference lastchild master) ++
-            (map (\(k, v) -> ModifyContent k v) childChanges)
+            (map (pairToFunc ModifyContent) childMods)
 
-        childChanges = foldl (changefunc True) [] (Map.toList child)
-        masterChanges = foldl (changefunc False) [] (Map.toList child)
-        changefunc useMaster accum (k, v) =
-            case Map.lookup k master of
-              Nothing -> accum
-              Just x -> if x /= v
-                        then if useMaster
-                             then (k, x) : accum
-                             else (k, v) : accum
-                        else accum
     in (expectedResMaster, expectedResChild) @=?
        (sort resMaster, sort resChild)
 

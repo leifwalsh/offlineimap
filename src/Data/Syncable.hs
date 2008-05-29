@@ -75,6 +75,9 @@ data (Eq k, Ord k, Show k, Show v) =>
          | ModifyContent k v
     deriving (Eq, Ord, Show)
 
+pairToFunc :: (a -> b -> c) -> (a, b) -> c
+pairToFunc func (a, b) = func a b
+
 {- | Perform a bi-directional sync.  Compared to the last known state of
 the child, evaluate the new states of the master and child.  Return a list of
 changes to make to the master and list of changes to make to the child to
@@ -104,15 +107,15 @@ syncBiDir masterstate childstate lastchildstate =
     where masterchanges = (map DeleteItem .
                           findDeleted childstate masterstate $ lastchildstate)
                           ++ 
-                          (map (\(x, y) -> CopyItem x y) .
+                          (map (pairToFunc CopyItem) .
                            findAdded childstate masterstate $ lastchildstate)
-                          ++ (map (\(x, y) -> ModifyContent x y) . Map.toList $ masterPayloadChanges)
+                          ++ (map (pairToFunc ModifyContent) . Map.toList $ masterPayloadChanges)
           childchanges = (map DeleteItem . 
                           findDeleted masterstate childstate $ lastchildstate)
                          ++
-                         (map (\(x, y) -> CopyItem x y) .
+                         (map (pairToFunc CopyItem) .
                           findAdded masterstate childstate $ lastchildstate)
-                         ++ (map (\(x, y) -> ModifyContent x y) . Map.toList $ childPayloadChanges)
+                         ++ (map (pairToFunc ModifyContent) . Map.toList $ childPayloadChanges)
           masterPayloadChanges = 
               findModified childstate lastchildstate
           -- The child's payload takes precedence, so we are going to
@@ -132,7 +135,7 @@ diffCollection :: (Ord k, Show k, Show v) =>
                -> [SyncCommand k v]
 diffCollection coll1 coll2 = 
     (map DeleteItem . findDeleted coll2 coll1 $ coll1) ++
-    (map (\(k, v) -> CopyItem k v) . findAdded coll2 coll1 $ coll1)
+    (map (pairToFunc CopyItem) . findAdded coll2 coll1 $ coll1)
 
 {- | Returns a list of keys that exist in state2 and lastchildstate
 but not in state1 -}
