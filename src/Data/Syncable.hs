@@ -85,7 +85,8 @@ bring them into proper sync.
 
 In the event that both master and child previously had an item, and the payload
 of the item has changed on both ends, the payload as given in the child
-will take precedence.
+will take precedence.  If both previously had an item, and it changed on only
+one end, the new value "wins".
 
 This relationship should hold:
 
@@ -128,7 +129,7 @@ syncBiDir masterstate childstate lastchildstate =
           childPayloadChanges = 
               Map.intersection
                  (Map.difference (findModified masterstate lastchildstate)
-                  (findModified childstate masterstate))
+                  (findModified childstate lastchildstate))
                  childstate
 
 {- | Compares two SyncCollections, and returns the commands that, when
