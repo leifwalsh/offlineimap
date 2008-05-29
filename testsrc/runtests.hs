@@ -25,6 +25,7 @@ import qualified Data.Map as Map
 import Data.List
 import Data.Maybe(catMaybes)
 import System.IO(stderr)
+import Data.Word
 
 import Data.Syncable
 import TestInfrastructure
@@ -47,7 +48,7 @@ prop_delAllFromMaster inp =
         in (expectedResMaster, []) @=? 
            (sort resMaster, resChild)
            
-prop_addFromMaster :: SyncCollection Int Float -> Result
+prop_addFromMaster :: SyncCollection Int Word8 -> Result
 prop_addFromMaster inp =
     let (resMaster, resChild) = syncBiDir inp emptymap emptymap
         expectedResChild = sort . map (\(k, v) -> CopyItem k v) . Map.toList $ inp
@@ -56,7 +57,7 @@ prop_addFromMaster inp =
 
 -- FIXME: prop_addFromChild
 
-prop_allChangesToChild :: SyncCollection Int Float -> SyncCollection Int Float -> Result
+prop_allChangesToChild :: SyncCollection Int Word8 -> SyncCollection Int Word8 -> Result
 prop_allChangesToChild master child =
     let (resMaster, resChild) = syncBiDir master child child
         expectedResChild = sort $
@@ -82,7 +83,7 @@ prop_allChangesToChild master child =
         in (sort masterChanges, expectedResChild) @=?
            (sort resMaster, sort resChild)
 
-prop_allChangesToMaster :: SyncCollection Int Float -> SyncCollection Int Float -> Result
+prop_allChangesToMaster :: SyncCollection Int Word8 -> SyncCollection Int Word8 -> Result
 prop_allChangesToMaster master child =
     let (resMaster, resChild) = syncBiDir master child master
         expectedResMaster = sort $
@@ -101,7 +102,7 @@ prop_allChangesToMaster master child =
 
 -- FIXME: test findModified
 
-prop_allChanges :: SyncCollection Int Float -> SyncCollection Int Float -> SyncCollection Int Float -> Result
+prop_allChanges :: SyncCollection Int Word8 -> SyncCollection Int Word8 -> SyncCollection Int Word8 -> Result
 prop_allChanges master child lastchild =
     let (resMaster, resChild) = syncBiDir master child lastchild
 
@@ -150,7 +151,7 @@ prop_allChanges master child lastchild =
        (sort resMaster, sort resChild)
 
 {- | Basic validation that unaryApplyChanges works -}
-prop_unaryApplyChanges :: SyncCollection Int Float -> [(Bool, Int, Float)] -> Result
+prop_unaryApplyChanges :: SyncCollection Int Word8 -> [(Bool, Int, Word8)] -> Result
 prop_unaryApplyChanges collection randcommands =
     let -- We use nubBy to make sure we don't get input that has reference
         -- to the same key more than once.  We then convert True/False to
@@ -170,7 +171,7 @@ prop_unaryApplyChanges collection randcommands =
 
 {- | Should validate both that unaryApplyChanges works, and that it is
 an identify -}
-prop_unaryApplyChangesId :: SyncCollection Int Float -> SyncCollection Int Float -> Result
+prop_unaryApplyChangesId :: SyncCollection Int Word8 -> SyncCollection Int Word8 -> Result
 prop_unaryApplyChangesId master child =
     let (resMaster, resChild) = syncBiDir master child child
         newMaster = unaryApplyChanges master resMaster
@@ -180,14 +181,14 @@ prop_unaryApplyChangesId master child =
         in (True, sort (Map.keys master), sort (Map.keys master)) @=?
            (newMasterKeys == newChildKeys, newMasterKeys, newChildKeys)
 
-prop_unaryApplyChanges3 :: SyncCollection Int Float -> SyncCollection Int Float -> SyncCollection Int Float -> Result
+prop_unaryApplyChanges3 :: SyncCollection Int Word8 -> SyncCollection Int Word8 -> SyncCollection Int Word8 -> Result
 prop_unaryApplyChanges3 master child lastChild =
     let (resMaster, resChild) = syncBiDir master child lastChild
         newMaster = unaryApplyChanges master resMaster
         newChild = unaryApplyChanges child resChild
     in newMaster @=? newChild
 
-prop_diffCollection :: SyncCollection Int Float -> SyncCollection Int Float -> Result
+prop_diffCollection :: SyncCollection Int Word8 -> SyncCollection Int Word8 -> Result
 prop_diffCollection coll1 coll2 = 
     let commands = diffCollection coll1 coll2
         newcoll2 = unaryApplyChanges coll1 commands

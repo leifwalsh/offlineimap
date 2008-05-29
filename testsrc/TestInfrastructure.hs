@@ -24,6 +24,7 @@ import qualified Data.Map as Map
 import System.IO
 import Text.Printf
 import System.Random
+import Data.Word
 
 (@=?) :: (Eq a, Show a) => a -> a -> Result
 expected @=? actual = 
