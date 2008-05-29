@@ -129,8 +129,8 @@ syncBiDir masterstate childstate lastchildstate =
           -- then subtract out any items in the master changes that have the
           -- same key.
           childPayloadChanges = 
-              Map.union (findModified childstate childstate masterstate lastchildstate)
-                 (findModified childstate childstate childstate lastchildstate)
+              Map.difference (findModified childstate masterstate masterstate lastchildstate)
+                 (findModified masterstate childstate childstate lastchildstate)
 
 {- | Compares two SyncCollections, and returns the commands that, when
 applied to the first collection, would yield the second. -}
