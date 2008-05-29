@@ -117,16 +117,19 @@ syncBiDir masterstate childstate lastchildstate =
                           findAdded masterstate childstate $ lastchildstate)
                          ++ (map (pairToFunc ModifyContent) . Map.toList $ childPayloadChanges)
           masterPayloadChanges = 
-              Map.union (findModified childstate lastchildstate)
-                 (findModified childstate masterstate)
+              Map.intersection
+                 (Map.union (findModified childstate lastchildstate)
+                  (findModified childstate masterstate))
+                 masterstate
           -- The child's payload takes precedence, so we are going to
           -- calculate the changes made on the master to apply to the client,
           -- then subtract out any items in the master changes that have the
           -- same key.
           childPayloadChanges = 
-              foldl (flip Map.delete) (findModified masterstate lastchildstate)
-                    (Map.keys (findModified childstate masterstate))
-                    
+              Map.intersection
+                 (Map.difference (findModified masterstate lastchildstate)
+                  (findModified childstate masterstate))
+                 childstate
 
 {- | Compares two SyncCollections, and returns the commands that, when
 applied to the first collection, would yield the second. -}
