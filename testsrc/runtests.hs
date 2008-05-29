@@ -194,7 +194,7 @@ prop_diffCollection coll1 coll2 =
         in coll2 @=? newcoll2
 
 q :: Testable a => String -> a -> HU.Test
-q = qccheck defaultConfig
+q = qccheck (defaultConfig {configMaxTest = 250})
 
 allt = [q "Empty" prop_empty,
         q "Del all from child" prop_delAllFromChild,
