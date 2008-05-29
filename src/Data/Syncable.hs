@@ -187,7 +187,7 @@ findModified basestate authoritativestate comparisonstate laststate =
                         (Just basev, Just authv) ->
                             if (authv /= lastv) && (authv /= basev)
                                then Just authv
-                               else if compv /= basev
+                               else if compv /= basev && (authv /= basev)
                                     then Just compv
                                     else Nothing
 
