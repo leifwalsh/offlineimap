@@ -52,7 +52,8 @@ Library
     HDBC>=1.1.0, mtl, base, hslogger,
     ConfigFile, filepath, directory, process
 
-  Exposed-Modules: Data.Syncable
+  Exposed-Modules: Data.Syncable,
+     Network.IMAP.Parser
 
   If flag(splitBase)
     Build-Depends: base >= 3, directory, random, process, old-time,
