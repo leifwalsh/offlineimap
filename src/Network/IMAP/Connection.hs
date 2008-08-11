@@ -20,7 +20,7 @@ module Network.IMAP.Connection where
 import Network.IMAP.Types
 import Control.Monad.State
 import Data.List.Utils(spanList)
-import Data.List(genericSplitAt, genericLength)
+import Data.List(genericSplitAt, genericLength, intercalate)
 
 type IMAPState = State (IMAPString, IMAPString)
 
@@ -65,3 +65,17 @@ runStringConnection ::
     -> (a, (String, String))    -- ^ Results: func result, buffer status
 runStringConnection sbuf func =
     runState (func newStringConnection) (sbuf::String, []::String)
+
+{- | Runs a State monad with a String connection, initializing it with 
+the passed lines.  -}
+runLinesConnection ::
+       [IMAPString]             -- ^ Buffer to send to clients
+    -> (IMAPConnection IMAPState -> IMAPState a) -- ^ Function to run
+    -> (a, (String, String))    -- ^ Results: func result, buffer status
+runLinesConnection sbuf func 
+    | sbuf == [] = 
+        -- For the empty input, no \r\n after.
+        runStringConnection [] func
+    | otherwise = 
+        -- Put \r\n between the lines, and also after the last one.
+        runStringConnection (intercalate "\r\n" sbuf ++ "\r\n") func
