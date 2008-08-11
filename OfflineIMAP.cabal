@@ -54,7 +54,8 @@ Library
 
   Exposed-Modules: Data.Syncable,
      Network.IMAP.Types,
-     Network.IMAP.Parser
+     Network.IMAP.Parser,
+     Network.IMAP.Connection
 
   If flag(splitBase)
     Build-Depends: base >= 3, directory, random, process, old-time,
