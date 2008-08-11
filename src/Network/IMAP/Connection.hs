@@ -42,9 +42,9 @@ stringConnection sdata wdata =
                     else do let (r, s') = genericSplitAt count s
                             put (s', sw)
                             return r
-          lreadLine count =
+          lreadLine =
               do (s, sw) <- get
-                 (line, remainder) <- spanList (\x -> "\r\n" /= take 2 x) s
+                 let (line, remainder) = spanList (\x -> "\r\n" /= take 2 x) s
                  case remainder of
                    [] -> fail "EOF in input in readLine"
                    r -> do put (drop 2 r, sw) -- strip of \r\n
