@@ -22,14 +22,15 @@ import Control.Monad.State
 import Data.List.Utils(spanList)
 import Data.List(genericSplitAt, genericLength)
 
--- | Take an IMAPString and treat it as messages from the server.
--- | Remember that EOL in IMAP protocols is \r\n!
+{- | Set up an IMAPConnection that runs in the State monad.
 
-stringConnection :: 
-    IMAPString ->               -- ^ The initial content of the buffer for the client to read from
-    IMAPString ->               -- ^ The initial content of the buffer for the client to write to
-    IMAPConnection (State (IMAPString, IMAPString))
-stringConnection sdata wdata =
+The state is (bufferToClient, bufferFromClient)
+
+Remember that EOL in IMAP protocols is \r\n!
+
+closeConnection is ignored with this monad. -}
+newStringConnection :: IMAPConnection (State (IMAPString, IMAPString))
+newStringConnection =
     IMAPConnection {readBytes = lreadBytes,
                     readLine = lreadLine,
                     writeBytes = lwriteBytes,
@@ -54,3 +55,17 @@ stringConnection sdata wdata =
               do (s, sw) <- get
                  put (s, sw ++ outdata)
 
+{- | Runs a State monad with a String connection.  Returns
+(retval, remainingBufferToClient, bufferFromClient) -}
+{-
+runStringConnection :: 
+    IMAPString -> 
+    ((State s a) -> a) ->
+    (a, IMAPString, IMAPString)
+-}
+runStringConnection ::
+       IMAPString               -- ^ Buffer to send to clients
+    -> (IMAPConnection (State (IMAPString, IMAPString)) -> State (IMAPString, IMAPString) a) -- ^ Function to run
+    -> (a, (String, String))    -- ^ Results: func result, buffer status
+runStringConnection sbuf func =
+    runState (func newStringConnection) (sbuf::String, []::String)
