@@ -50,9 +50,10 @@ Library
 
   Build-Depends: haskell98, network, unix, parsec, MissingH>=1.0.0,
     HDBC>=1.1.0, mtl, base, hslogger,
-    ConfigFile, filepath, directory, process
+    ConfigFile, filepath, directory, process, regex-posix
 
   Exposed-Modules: Data.Syncable,
+     Network.IMAP.Types,
      Network.IMAP.Parser
 
   If flag(splitBase)
