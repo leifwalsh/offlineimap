@@ -28,11 +28,15 @@ import Data.Word
 import TestInfrastructure
 
 import qualified TestSyncable
+import qualified TestConnection
 
 q :: Testable a => String -> a -> HU.Test
 q = qccheck (defaultConfig {configMaxTest = 250})
 
-allt = TestSyncable.allt
+tl msg t = HU.TestLabel msg $ HU.TestList t
+
+allt = [tl "TestSyncable" TestSyncable.allt,
+        tl "TestConnection" TestConnection.allt]
 
 testh = HU.runTestTT $ HU.TestList allt
 testv = runVerbTestText (HU.putTextToHandle stderr True) $ HU.TestList allt
