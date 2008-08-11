@@ -57,6 +57,11 @@ instance Random Word8 where
                        randomR (toInteger a, toInteger b) g
     random g = randomR (minBound, maxBound) g
 
+instance Arbitrary Char where
+    arbitrary = sized $ \n -> choose (toEnum 0, min (toEnum n) maxBound)
+    coarbitrary n = variant (if (fromEnum n) >= 0 then toEnum (2 * x) else toEnum (2 * x + 1))
+                where x = (abs . fromEnum $ n)::Int
+
 -- Modified from HUnit
 runVerbTestText :: HU.PutText st -> HU.Test -> IO (HU.Counts, st)
 runVerbTestText (HU.PutText put us) t = do
