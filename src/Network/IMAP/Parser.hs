@@ -68,13 +68,12 @@ getFullLine accum conn =
 
 {- | Returns Left for a "BYE" response, or Right if we are ready to
 proceed with auth (or preauth). -}
-greeting :: IMAPParser (Either RespText (AuthReady, RespText))
+greeting :: IMAPParser (AuthReady, RespText)
 greeting =
     do string "* "
-       (respCondBye >>= return . Left) <|>
-          (respCondAuth >>= return . Right)
+       respCondBye <|> respCondAuth
 
-data AuthReady = AUTHOK | AUTHPREAUTH
+data AuthReady = AUTHOK | AUTHPREAUTH | AUTHBYE
           deriving (Eq, Read, Show)
 
 data RespText = RespText {respTextCode :: Maybe String,
@@ -89,10 +88,11 @@ respCondAuth =
        t <- respText
        return (s, t)
 
-respCondBye :: IMAPParser RespText
+respCondBye :: IMAPParser (AuthReady, RespText)
 respCondBye =
     do string "BYE "
-       respText
+       t <- respText
+       return (AUTHBYE, t)
 
 -- Less strict than mandated in RFC3501 formal syntax
 respText :: IMAPParser RespText
