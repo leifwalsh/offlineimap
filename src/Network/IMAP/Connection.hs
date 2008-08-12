@@ -50,7 +50,7 @@ newStringConnection =
                  let (line, remainder) = spanList (\x -> "\r\n" /= take 2 x) s
                  case remainder of
                    [] -> fail "EOF in input in readLine"
-                   r -> do put (drop 2 r, sw) -- strip of \r\n
+                   r -> do put (drop 2 r, sw) -- strip off \r\n
                            return line
 
           lwriteBytes outdata =
