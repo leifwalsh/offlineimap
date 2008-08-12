@@ -57,9 +57,12 @@ gen_literal :: String -> String
 gen_literal s =
     "{" ++ show (length s) ++ "}\r\n" ++ s
 
+gen_string3501 :: String -> Bool -> String
+gen_string3501 s True = gen_quoted s
+gen_string3501 s False = gen_literal s
+
 prop_string3501 :: String -> Bool -> Result
-prop_string3501 s True = p string3501 (gen_quoted s) @?= Just s
-prop_string3501 s False = p string3501 (gen_literal s) @?= Just s
+prop_string3501 s useQuoted = p string3501 (gen_string3501 s useQuoted) @?= Just s
     
 prop_atom :: String -> Result
 prop_atom s =
@@ -70,17 +73,25 @@ prop_atom s =
 
 prop_astring_basic :: String -> Result
 prop_astring_basic s =
-    p astring s @?= if isvalid
+    p astring s @?= if isValidAtom s
                        then Just s
                        else Nothing
-    where isvalid = not (null s) && all isValidChar s
-          isValidChar c =
+
+isValidAtom s = not (null s) && all isValidChar s
+    where isValidChar c =
               c `notElem` atomSpecials ||
               c `elem` respSpecials
+
+prop_astring :: String -> Bool -> Result
+prop_astring s useQuoted = 
+    if isValidAtom s
+       then p astring s @=? Just s
+       else p astring (gen_string3501 s useQuoted) @=? Just s
 
 allt = [q "quoted" prop_quoted,
         q "literal" prop_literal,
         q "string3501" prop_string3501,
         q "atom" prop_atom,
-        q "astring basic" prop_astring_basic
+        q "astring basic" prop_astring_basic,
+        q "prop_astring" prop_astring
        ]
