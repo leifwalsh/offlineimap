@@ -69,7 +69,7 @@ runVerbTestText (HU.PutText put us) t = do
   us'' <- put (HU.showCounts counts) True us'
   return (counts, us'')
  where
-  reportStart ss us = do hPrintf stderr "\rTesting %-68s\n" (HU.showPath (HU.path ss))
+  reportStart ss us = do hPrintf stdout "\rTesting %-68s\n" (HU.showPath (HU.path ss))
                          put (HU.showCounts (HU.counts ss)) False us
   reportError   = reportProblem "Error:"   "Error in:   "
   reportFailure = reportProblem "Failure:" "Failure in: "
