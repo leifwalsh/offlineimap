@@ -55,6 +55,7 @@ Library
   Exposed-Modules: Data.Syncable,
      Network.IMAP.Types,
      Network.IMAP.Parser,
+     Network.IMAP.Parser.Prim,
      Network.IMAP.Connection
 
   If flag(splitBase)
