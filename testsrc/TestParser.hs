@@ -39,5 +39,17 @@ prop_getFullLine_basic s =
                then Left "EOF in input in readLine"
                else Right (head s, (expectedString (tail s), []))
 
-allt = [q "getFullLine_basic" prop_getFullLine_basic
+prop_getFullLine_count :: [String] -> Property
+prop_getFullLine_count s =
+    length s >= 2 && noCR s && (length s < 3 || not ("}" `isSuffixOf` (s !! 2)))
+           ==> 
+           runLinesConnection lenS (getFullLine []) @?=
+                              Right (expectedResult, (expectedRemain, []))
+    where lenS = [head s ++ "{" ++ show (length (s !! 1)) ++ "}\r\n" ++ (s !! 1)]
+                 ++ (drop 2 s)
+          expectedResult = concat (take 2 s)
+          expectedRemain = expectedString (drop 2 s)
+
+allt = [q "getFullLine_basic" prop_getFullLine_basic,
+        q "getFullLine_count" prop_getFullLine_count
        ]
