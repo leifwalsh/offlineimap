@@ -80,5 +80,10 @@ runVerbTestText (HU.PutText put us) t = do
          path' = HU.showPath (HU.path ss)
 
 q :: Testable a => String -> a -> HU.Test
-q = qccheck (defaultConfig {configMaxTest = 250, configMaxFail = 5000})
+q = qccheck (defaultConfig {configMaxTest = 250, configMaxFail = 10000,
+                            configEvery = \_ _ -> ""})
+    -- configEvery = testCount for displaying a running test counter
+    where testCountBase n = " (test " ++ show n ++ "/250)"
+          testCount n _ = testCountBase n ++ 
+                          replicate (length (testCountBase n)) '\b'
 
