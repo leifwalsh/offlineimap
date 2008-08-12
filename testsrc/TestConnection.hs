@@ -25,6 +25,7 @@ import Test.QuickCheck
 import TestInfrastructure
 
 import Network.IMAP.Connection
+import Network.IMAP.Types
 
 prop_identity :: String -> Bool
 prop_identity f = runStringConnection f (\_ -> return ()) == ((), (f, []))
@@ -33,18 +34,28 @@ prop_linesidentity :: String -> Bool
 prop_linesidentity f =
     runLinesConnection [f] (\_ -> return ()) == ((), (f ++ "\r\n", []))
 
-prop_lineslistidentity :: [String] -> Bool
+prop_lineslistidentity :: [String] -> Property
 prop_lineslistidentity f =
-    runLinesConnection f (\_ -> return ()) == ((), (expected, []))
-    where expected = 
+    and (map (notElem '\r') f)  ==> 
+        runLinesConnection f (\_ -> return ()) @?= ((), (expected, []))
+    where expected = expectedString f
+
+expectedString f =
               case f of
                 [] -> []
                 _ -> (intercalate "\r\n" f) ++ "\r\n"
 
+prop_readLine :: [String] -> Property
+prop_readLine s =
+    (not (null s)) && (and (map (notElem '\r') s)) ==> 
+        runLinesConnection s readLine @?=
+            (head s, (expectedString (tail s), []))
+
 q :: Testable a => String -> a -> HU.Test
-q = qccheck (defaultConfig {configMaxTest = 250})
+q = qccheck (defaultConfig {configMaxTest = 250, configMaxFail = 5000})
 
 allt = [q "Identity" prop_identity,
         q "Lines identity" prop_linesidentity,
-        q "Lines list identity" prop_lineslistidentity
+        q "Lines list identity" prop_lineslistidentity,
+        q "readline" prop_readLine
        ]
