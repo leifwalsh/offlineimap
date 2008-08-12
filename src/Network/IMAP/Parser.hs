@@ -106,6 +106,8 @@ respText =
                  b <- option "" (sp >> respTextCodeText)
                  char ']'
                  sp
-                 return (a ++ " " ++ b)
+                 case b of
+                   [] -> return a
+                   _ -> return $ a ++ " " ++ b
           respTextCodeText = many1 (noneOf (']' : crlf))
                  

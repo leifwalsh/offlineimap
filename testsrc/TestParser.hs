@@ -77,7 +77,7 @@ prop_respTextSimple s =
 
 prop_respTextAtom :: String -> Property
 prop_respTextAtom s2 =
-    isValidAtom s2 && isValidText s1 ==>
+    isValidAtom s2 && isValidText s1 && ']' `notElem` s1 ==>
     p respText ("[" ++ s2 ++ "] " ++ s1) @?=
       Just (RespText (Just s2) s1)
     where s1 = reverse s2 -- Gen manually to avoid test exhaustion
