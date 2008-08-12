@@ -21,18 +21,19 @@ import Text.ParserCombinators.Parsec
 import Network.IMAP.Types
 import Text.Regex.Posix
 import Data.Int
+import Data.List
 
 {- | Read a full response from the server. -}
-{-
 readFullResponse :: Monad m => 
     IMAPConnection m ->         -- ^ The connection to the server
-    IMAPString ->               -- ^ The tag that we are awaiting
     m IMAPString
-readFullResponse conn expectedtag =
+readFullResponse conn =
     accumLines []
     where accumLines accum = 
-              do line <- getFullLine []
--}
+              do line <- getFullLine [] conn
+                 if "* " `isPrefixOf` line
+                    then accumLines (accum ++ line ++ "\r\n")
+                    else return (accum ++ line ++ "\r\n")
 
 {- | Read a full line from the server, handling any continuation stuff.
 
