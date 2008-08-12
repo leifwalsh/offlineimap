@@ -68,8 +68,19 @@ prop_atom s =
                     else Nothing
     where isvalid = not (null s) && all (`notElem` atomSpecials) s
 
+prop_astring_basic :: String -> Result
+prop_astring_basic s =
+    p astring s @?= if isvalid
+                       then Just s
+                       else Nothing
+    where isvalid = not (null s) && all isValidChar s
+          isValidChar c =
+              c `notElem` atomSpecials ||
+              c `elem` respSpecials
+
 allt = [q "quoted" prop_quoted,
         q "literal" prop_literal,
         q "string3501" prop_string3501,
-        q "atom" prop_atom
+        q "atom" prop_atom,
+        q "astring basic" prop_astring_basic
        ]
