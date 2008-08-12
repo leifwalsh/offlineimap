@@ -59,12 +59,6 @@ dquote = '"'
 char2234 :: String
 char2234 = ['\x01'..'\x7f']
 
--- | RFC 2234
-sp :: Char
-sp = ' '
-
--- | RFC 2234
-
 ----------------------------------------------------------------------
 -- RFC 3501 primitives
 ----------------------------------------------------------------------
@@ -138,3 +132,6 @@ tag :: IMAPParser String
 tag = many1 tagChar
     where tagChar = (char '+' >> fail "No + for tag") <|> 
                     astringChar
+
+sp :: IMAPParser Char
+sp = char ' '

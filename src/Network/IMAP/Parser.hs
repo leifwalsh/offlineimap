@@ -23,6 +23,8 @@ import Text.Regex.Posix
 import Data.Int
 import Data.List
 
+import Network.IMAP.Parser.Prim
+
 {- | Read a full response from the server. -}
 readFullResponse :: Monad m => 
     IMAPConnection m ->         -- ^ The connection to the server
@@ -59,3 +61,52 @@ getFullLine accum conn =
               case i =~ "\\{([0-9]+)\\}$" :: (String, String, String, [String]) of
                 (_, _, _, [x]) -> Just (read x)
                 _ -> Nothing
+
+----------------------------------------------------------------------
+-- Response parsing
+----------------------------------------------------------------------
+
+{- | Returns Left for a "BYE" response, or Right if we are ready to
+proceed with auth (or preauth). -}
+greeting :: IMAPParser (Either RespText (AuthReady, RespText))
+greeting =
+    do string "* "
+       (respCondBye >>= return . Left) <|>
+          (respCondAuth >>= return . Right)
+
+data AuthReady = AUTHOK | AUTHPREAUTH
+          deriving (Eq, Read, Show)
+
+data RespText = RespText {respTextCode :: Maybe String,
+                           respTextMsg :: String}
+                 deriving (Eq, Read, Show)
+
+respCondAuth :: IMAPParser (AuthReady, RespText)
+respCondAuth =
+    do s <- (string "OK" >> return AUTHOK) <|>
+            (string "PREAUTH" >> return AUTHPREAUTH)
+       sp
+       t <- respText
+       return (s, t)
+
+respCondBye :: IMAPParser RespText
+respCondBye =
+    do string "BYE "
+       respText
+
+-- Less strict than mandated in RFC3501 formal syntax
+respText :: IMAPParser RespText
+respText =
+    do code <- optionMaybe respTextCode
+       t <- text
+       return $ RespText code t
+    where respTextCode =
+              do char '['
+                 a <- atom
+                 sp
+                 b <- option "" respTextCodeText
+                 char ']'
+                 sp
+                 return (a ++ " " ++ b)
+          respTextCodeText = many1 (noneOf (']' : crlf))
+                 
