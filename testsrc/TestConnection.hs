@@ -33,13 +33,18 @@ prop_linesidentity :: String -> Bool
 prop_linesidentity f =
     runLinesConnection [f] (\_ -> return ()) == ((), (f ++ "\r\n", []))
 
-prop_lineslistidentity :: String -> Bool
+prop_lineslistidentity :: [String] -> Bool
 prop_lineslistidentity f =
-    runLinesConnection f (\_ -> return ()) == ((), 
+    runLinesConnection f (\_ -> return ()) == ((), (expected, []))
+    where expected = 
+              case f of
+                [] -> []
+                _ -> (intercalate "\r\n" f) ++ "\r\n"
 
 q :: Testable a => String -> a -> HU.Test
 q = qccheck (defaultConfig {configMaxTest = 250})
 
 allt = [q "Identity" prop_identity,
         q "Lines identity" prop_linesidentity,
+        q "Lines list identity" prop_lineslistidentity
        ]
