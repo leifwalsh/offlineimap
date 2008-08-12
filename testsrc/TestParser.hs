@@ -30,7 +30,7 @@ import Network.IMAP.Types
 
 import TestInfrastructure
 import TestConnection(expectedString, noCR)
-import TestParserPrim(isValidText)
+import TestParserPrim(isValidText, isValidAtom)
 
 prop_getFullLine_basic :: [String] -> Property
 prop_getFullLine_basic s =
@@ -71,12 +71,21 @@ noBrace s = and (map (not . isSuffixOf "}") s)
 prop_respTextSimple :: String -> Result
 prop_respTextSimple s =
     p respText s @?= 
-      if isValidText s
+      if isValidText s && (head s /= '[')
          then Just (RespText Nothing s)
          else Nothing
+
+prop_respTextAtom :: String -> Property
+prop_respTextAtom s2 =
+    isValidAtom s2 && isValidText s1 ==>
+    p respText ("[" ++ s2 ++ "] " ++ s1) @?=
+      Just (RespText (Just s2) s1)
+    where s1 = reverse s2 -- Gen manually to avoid test exhaustion
+          
 
 allt = [q "getFullLine_basic" prop_getFullLine_basic,
         q "getFullLine_count" prop_getFullLine_count,
         q "readFullResponse_basic" prop_rfr_basic,
-        q "respText simple" prop_respTextSimple
+        q "respText simple" prop_respTextSimple,
+        q "respText atom" prop_respTextAtom
        ]

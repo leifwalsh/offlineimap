@@ -106,7 +106,7 @@ allt = [q "quoted" prop_quoted,
         q "string3501" prop_string3501,
         q "atom" prop_atom,
         q "astring basic" prop_astring_basic,
-        qverbose "astring basic thorough" prop_astring_basic_thorough,
+        q "astring basic thorough" prop_astring_basic_thorough,
         q "astring full" prop_astring,
         q "text" prop_text,
         q "tag" prop_tag
