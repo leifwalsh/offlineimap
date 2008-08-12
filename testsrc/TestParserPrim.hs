@@ -95,12 +95,23 @@ prop_text s =
                  else Nothing
     where isValid = not (null s) && all (`notElem` crlf) s
 
+prop_tag :: String -> Result
+prop_tag s =
+    p tag s @=? if isValid
+      then Just s
+      else Nothing
+    where isValid = not (null s) && all isValidChar s
+          isValidChar c =
+              c `notElem` ('+' : atomSpecials) ||
+              c `elem` respSpecials
+
 allt = [q "quoted" prop_quoted,
         q "literal" prop_literal,
         q "string3501" prop_string3501,
         q "atom" prop_atom,
         q "astring basic" prop_astring_basic,
         q "astring full" prop_astring,
-        q "text" prop_text
+        q "text" prop_text,
+        q "tag" prop_tag
        ]
 

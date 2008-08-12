@@ -121,3 +121,7 @@ quotedChar =
 textChar = noneOf crlf
 
 text = many1 textChar
+
+tag = many1 tagChar
+    where tagChar = (char '+' >> fail "No + for tag") <|> 
+                    astringChar
