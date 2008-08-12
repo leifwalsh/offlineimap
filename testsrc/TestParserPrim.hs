@@ -28,15 +28,20 @@ import Network.IMAP.Types
 
 import TestInfrastructure
 import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec.Error
 
+{- | Test a parser, forcing it to apply to all input. -}
 p parser input = 
-    case parse parser "(none)" input of
-      Left e -> Left (show e)
-      Right y -> Right y
+    case parse parseTest "(none)" input of
+      Left _ -> Nothing
+      Right y -> Just y
+    where parseTest = do r <- parser
+                         eof
+                         return r
 
 prop_quoted :: String -> Result
 prop_quoted s =
-    p quoted (gen_quoted s) @?= Right s
+    p quoted (gen_quoted s) @?= Just s
 
 gen_quoted :: String -> String
 gen_quoted s = '"' : concatMap quoteChar s ++ "\""
@@ -46,17 +51,25 @@ gen_quoted s = '"' : concatMap quoteChar s ++ "\""
 
 prop_literal :: String -> Result
 prop_literal s =
-    p literal (gen_literal s) @?= Right s
+    p literal (gen_literal s) @?= Just s
 
 gen_literal :: String -> String
 gen_literal s =
     "{" ++ show (length s) ++ "}\r\n" ++ s
 
 prop_string3501 :: String -> Bool -> Result
-prop_string3501 s True = p string3501 (gen_quoted s) @?= Right s
-prop_string3501 s False = p string3501 (gen_literal s) @?= Right s
+prop_string3501 s True = p string3501 (gen_quoted s) @?= Just s
+prop_string3501 s False = p string3501 (gen_literal s) @?= Just s
     
+prop_atom :: String -> Result
+prop_atom s =
+    p atom s @?= if isvalid
+                    then Just s
+                    else Nothing
+    where isvalid = not (null s) && all (`notElem` atomSpecials) s
+
 allt = [q "quoted" prop_quoted,
         q "literal" prop_literal,
-        q "string3501" prop_string3501
+        q "string3501" prop_string3501,
+        q "atom" prop_atom
        ]
