@@ -66,9 +66,15 @@ prop_readBytes s l =
                     LT -> Right (take l s, (drop l s, []))
                     GT -> Left "EOF in input in readBytes"
 
+prop_writeBytes :: [String] -> Result
+prop_writeBytes s =
+    runStringConnection [] (\c -> mapM_ (writeBytes c) s) @?=
+                        Right ((), ([], concat s))
+
 allt = [q "Identity" prop_identity,
         q "Lines identity" prop_linesidentity,
         q "Lines list identity" prop_lineslistidentity,
         q "readline" prop_readLine,
-        q "readBytes" prop_readBytes
+        q "readBytes" prop_readBytes,
+        q "writeBytes" prop_writeBytes
        ]
