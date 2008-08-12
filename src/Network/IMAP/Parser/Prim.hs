@@ -20,6 +20,8 @@ module Network.IMAP.Parser.Prim where
 import Text.ParserCombinators.Parsec
 import Network.IMAP.Types
 
+type IMAPParser a = CharParser () a
+
 ----------------------------------------------------------------------
 -- RFC 2234 (ABNF) declarations
 ----------------------------------------------------------------------
@@ -88,16 +90,22 @@ respSpecials = "]"
 -- be more permissive.
 --
 -- FIXME: not stated in RFC, but perhaps CRLF is also excluded?
+atomChar :: IMAPParser Char
 atomChar = noneOf atomSpecials
 
+atom :: IMAPParser String
 atom = many1 atomChar
 
+astringChar :: IMAPParser Char
 astringChar = atomChar <|> oneOf respSpecials
 
+astring :: IMAPParser String
 astring = many1 astringChar <|> string3501
 
+string3501 :: IMAPParser String
 string3501 = quoted <|> literal
 
+literal :: IMAPParser String
 literal = 
     do char '{'
        scount <- many1 digit
@@ -106,22 +114,27 @@ literal =
        let icount = (read scount)::Int
        count icount anyChar
        
+quoted :: IMAPParser String
 quoted = 
     do char dquote
        strdata <- many quotedChar
        char dquote
        return strdata
 
+quotedChar :: IMAPParser Char
 quotedChar = 
     noneOf quotedSpecials <|> (do char '\\'
                                   oneOf quotedSpecials
                               )
 
 -- | Fixme: should exclude 8-bit data per RFC3501           
+textChar :: IMAPParser Char
 textChar = noneOf crlf
 
+text :: IMAPParser String
 text = many1 textChar
 
+tag :: IMAPParser String
 tag = many1 tagChar
     where tagChar = (char '+' >> fail "No + for tag") <|> 
                     astringChar
