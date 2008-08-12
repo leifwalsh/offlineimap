@@ -50,6 +50,24 @@ prop_getFullLine_count s =
           expectedResult = braceString ++ "\r\n" ++ (s !! 1)
           expectedRemain = expectedString (drop 2 s)
 
+prop_rfr_basic :: [String] -> Property
+prop_rfr_basic s =
+    let testlist = 
+            case length s of
+              0 -> []
+              1 -> ["TAG " ++ head s]
+              _ -> map ("* " ++) (init s) ++
+                   ["TAG " ++ last s]
+        resultstr = expectedString testlist
+    in noCR s && noBrace s ==>
+       runLinesConnection testlist readFullResponse @?=
+             if null s
+                then Left "EOF in input in readLine"
+                else Right (resultstr, ([], []))
+
+noBrace s = and (map (not . isSuffixOf "}") s)
+
 allt = [q "getFullLine_basic" prop_getFullLine_basic,
-        q "getFullLine_count" prop_getFullLine_count
+        q "getFullLine_count" prop_getFullLine_count,
+        q "readFullResponse_basic" prop_rfr_basic
        ]
