@@ -46,7 +46,7 @@ expectedString f =
                 _ -> (intercalate "\r\n" f) ++ "\r\n"
 
 noCR :: [String] -> Bool
-noCR s = and (map (notElem '\r') s)
+noCR s = and (map (\e -> notElem '\r' e && notElem '\NUL' e) s)
 
 prop_readLine :: [String] -> Property
 prop_readLine s =
