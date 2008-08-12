@@ -36,11 +36,22 @@ p parser input =
 
 prop_quoted :: String -> Result
 prop_quoted s =
-    p quoted quotedString @?= Right s
-    where quotedString = '"' : concatMap quoteChar s ++ "\""
-          quoteChar '\\' = "\\\\"
+    p quoted (gen_quoted s) @?= Right s
+
+gen_quoted :: String -> String
+gen_quoted s = '"' : concatMap quoteChar s ++ "\""
+    where quoteChar '\\' = "\\\\"
           quoteChar '"' = "\\\""
           quoteChar x = [x]
 
-allt = [q "quoted" prop_quoted
+prop_literal :: String -> Result
+prop_literal s =
+    p literal (gen_literal s) @?= Right s
+
+gen_literal :: String -> String
+gen_literal s =
+    "{" ++ show (length s) ++ "}\r\n" ++ s
+
+allt = [q "quoted" prop_quoted,
+        q "literal" prop_literal
        ]
