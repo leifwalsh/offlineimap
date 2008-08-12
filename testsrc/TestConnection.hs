@@ -51,11 +51,18 @@ prop_readLine s =
         runLinesConnection s readLine @?=
             (head s, (expectedString (tail s), []))
 
+prop_readBytes :: String -> Int -> Property
+prop_readBytes s l =
+    l <= length s && l >= 0 ==> 
+      runStringConnection s (\c -> readBytes c (fromIntegral l)) ==
+                         (take l s, (drop l s, []))
+
 q :: Testable a => String -> a -> HU.Test
 q = qccheck (defaultConfig {configMaxTest = 250, configMaxFail = 5000})
 
 allt = [q "Identity" prop_identity,
         q "Lines identity" prop_linesidentity,
         q "Lines list identity" prop_lineslistidentity,
-        q "readline" prop_readLine
+        q "readline" prop_readLine,
+        q "readBytes" prop_readBytes
        ]
