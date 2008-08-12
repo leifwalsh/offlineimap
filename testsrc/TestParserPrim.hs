@@ -68,6 +68,10 @@ prop_astring_basic s =
                        then Just s
                        else Nothing
 
+prop_astring_basic_thorough :: String -> Property
+prop_astring_basic_thorough s =
+    isValidAtom s ==> p astring s @?= Just s
+
 isValidAtom s = not (null s) && all isValidChar s
     where isValidChar c =
               c `notElem` atomSpecials ||
@@ -102,6 +106,7 @@ allt = [q "quoted" prop_quoted,
         q "string3501" prop_string3501,
         q "atom" prop_atom,
         q "astring basic" prop_astring_basic,
+        qverbose "astring basic thorough" prop_astring_basic_thorough,
         q "astring full" prop_astring,
         q "text" prop_text,
         q "tag" prop_tag
