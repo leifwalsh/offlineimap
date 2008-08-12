@@ -26,6 +26,7 @@ import Text.Printf
 import System.Random
 import Data.Word
 import Test.HUnit.Utils
+import Text.ParserCombinators.Parsec
 
 (@=?) :: (Eq a, Show a) => a -> a -> Result
 expected @=? actual = 
@@ -87,4 +88,13 @@ q = qccheck (defaultConfig {configMaxTest = 250, configMaxFail = 10000,
     where testCountBase n = " (test " ++ show n ++ "/250)"
           testCount n _ = testCountBase n ++ 
                           replicate (length (testCountBase n)) '\b'
+
+{- | Test a parser, forcing it to apply to all input. -}
+p parser input = 
+    case parse parseTest "(none)" input of
+      Left _ -> Nothing
+      Right y -> Just y
+    where parseTest = do r <- parser
+                         eof
+                         return r
 

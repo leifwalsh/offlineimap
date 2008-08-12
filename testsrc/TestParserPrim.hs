@@ -30,15 +30,6 @@ import TestInfrastructure
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Error
 
-{- | Test a parser, forcing it to apply to all input. -}
-p parser input = 
-    case parse parseTest "(none)" input of
-      Left _ -> Nothing
-      Right y -> Just y
-    where parseTest = do r <- parser
-                         eof
-                         return r
-
 prop_quoted :: String -> Result
 prop_quoted s =
     p quoted (gen_quoted s) @?= Just s
@@ -90,10 +81,11 @@ prop_astring s useQuoted =
 
 prop_text :: String -> Result
 prop_text s =
-    p text s @=? if isValid
+    p text s @=? if isValidText s
                  then Just s
                  else Nothing
-    where isValid = not (null s) && all (`notElem` crlf) s
+
+isValidText s = not (null s) && all (`notElem` crlf) s
 
 prop_tag :: String -> Result
 prop_tag s =
