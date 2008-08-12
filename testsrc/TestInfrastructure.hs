@@ -96,9 +96,14 @@ qverbose = qccheck (defaultConfig {configMaxTest = 250, configMaxFail = 20000,
 
 {- | Test a parser, forcing it to apply to all input. -}
 p parser input = 
-    case parse parseTest "(none)" input of
+    case p' parser input of
       Left _ -> Nothing
       Right y -> Just y
+
+p' parser input =
+    case parse parseTest "(none)" input of
+      Left x -> Left (show x)
+      Right y -> Right y
     where parseTest = do r <- parser
                          eof
                          return r

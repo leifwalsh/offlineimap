@@ -103,8 +103,7 @@ respText =
     where respTextCode =
               do char '['
                  a <- atom
-                 sp
-                 b <- option "" respTextCodeText
+                 b <- option "" (sp >> respTextCodeText)
                  char ']'
                  sp
                  return (a ++ " " ++ b)
