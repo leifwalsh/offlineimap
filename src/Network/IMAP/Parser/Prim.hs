@@ -116,4 +116,8 @@ quotedChar =
     noneOf quotedSpecials <|> (do char '\\'
                                   oneOf quotedSpecials
                               )
-           
+
+-- | Fixme: should exclude 8-bit data per RFC3501           
+textChar = noneOf crlf
+
+text = many1 textChar

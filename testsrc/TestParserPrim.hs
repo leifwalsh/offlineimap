@@ -88,10 +88,19 @@ prop_astring s useQuoted =
        then p astring s @=? Just s
        else p astring (gen_string3501 s useQuoted) @=? Just s
 
+prop_text :: String -> Result
+prop_text s =
+    p text s @=? if isValid
+                 then Just s
+                 else Nothing
+    where isValid = not (null s) && all (`notElem` crlf) s
+
 allt = [q "quoted" prop_quoted,
         q "literal" prop_literal,
         q "string3501" prop_string3501,
         q "atom" prop_atom,
         q "astring basic" prop_astring_basic,
-        q "prop_astring" prop_astring
+        q "astring full" prop_astring,
+        q "text" prop_text
        ]
+
