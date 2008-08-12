@@ -36,8 +36,10 @@ readFullResponse conn expectedtag =
 
 {- | Read a full line from the server, handling any continuation stuff.
 
-FIXME: for now, we naively assume that any line ending in '}\r\n' is
-having a continuation piece. -}
+If a {x}\r\n occurs, then that string (including the \r\n) will occur
+literally in the result, followed by the literal read, and the rest of the
+data.
+ -}
 
 getFullLine :: Monad m => 
                IMAPString ->    -- ^ The accumulator (empty for first call)
@@ -50,9 +52,9 @@ getFullLine accum conn =
          Nothing -> return (accum ++ input)
          Just (size) -> 
              do literal <- readBytes conn size
-                getFullLine (accum ++ input ++ literal) conn
+                getFullLine (accum ++ input ++ "\r\n" ++ literal) conn
     where checkContinuation :: String -> Maybe Int64
           checkContinuation i =
-              case i =~ "\\{([0-9]+)\\}$" of
-                [] -> Nothing
-                x -> Just (read x)
+              case i =~ "\\{([0-9]+)\\}$" :: (String, String, String, [String]) of
+                (_, _, _, [x]) -> Just (read x)
+                _ -> Nothing

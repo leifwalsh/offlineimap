@@ -45,9 +45,9 @@ prop_getFullLine_count s =
            ==> 
            runLinesConnection lenS (getFullLine []) @?=
                               Right (expectedResult, (expectedRemain, []))
-    where lenS = [head s ++ "{" ++ show (length (s !! 1)) ++ "}\r\n" ++ (s !! 1)]
-                 ++ (drop 2 s)
-          expectedResult = concat (take 2 s)
+    where lenS = [braceString] ++ [(head . tail $ s)] ++ drop 2 s
+          braceString = head s ++ "{" ++ show (length (s !! 1)) ++ "}"
+          expectedResult = braceString ++ "\r\n" ++ (s !! 1)
           expectedRemain = expectedString (drop 2 s)
 
 allt = [q "getFullLine_basic" prop_getFullLine_basic,
