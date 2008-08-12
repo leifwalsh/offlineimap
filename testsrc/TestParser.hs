@@ -82,10 +82,18 @@ prop_respTextAtom s2 =
       Just (RespText (Just s2) s1)
     where s1 = reverse s2 -- Gen manually to avoid test exhaustion
           
+prop_respTextAtomOpt :: String -> String -> String -> Property
+prop_respTextAtomOpt codeatom codedesc text =
+    isValidAtom codeatom && isValidText codedesc && isValidText text &&
+                ']' `notElem` (codeatom ++ codedesc) &&
+                (head text) /= '[' ==>
+    p respText ("[" ++ codeatom ++ " " ++ codedesc ++ "] " ++ text) @?=
+      Just (RespText (Just (codeatom ++ " " ++ codedesc)) text)
 
 allt = [q "getFullLine_basic" prop_getFullLine_basic,
         q "getFullLine_count" prop_getFullLine_count,
         q "readFullResponse_basic" prop_rfr_basic,
         q "respText simple" prop_respTextSimple,
-        q "respText atom" prop_respTextAtom
+        q "respText atom" prop_respTextAtom,
+        q "respTextAtomOpt" prop_respTextAtomOpt
        ]
