@@ -47,15 +47,21 @@ expectedString f =
 
 prop_readLine :: [String] -> Property
 prop_readLine s =
-    (not (null s)) && (and (map (notElem '\r') s)) ==> 
+    (and (map (notElem '\r') s)) ==> 
         runLinesConnection s readLine @?=
-            Right (head s, (expectedString (tail s), []))
+            if null s
+               then Left "EOF in input in readLine"
+               else Right (head s, (expectedString (tail s), []))
 
-prop_readBytes :: String -> Int -> Property
+prop_readBytes :: String -> Int -> Result
 prop_readBytes s l =
-    l <= length s && l >= 0 ==> 
-      runStringConnection s (\c -> readBytes c (fromIntegral l)) ==
-                         Right (take l s, (drop l s, []))
+      runStringConnection s (\c -> readBytes c (fromIntegral l)) @?=
+          if l < 0
+             then Left "readBytes: negative count"
+             else case compare l (length s) of
+                    EQ -> Right (take l s, (drop l s, []))
+                    LT -> Right (take l s, (drop l s, []))
+                    GT -> Left "EOF in input in readBytes"
 
 q :: Testable a => String -> a -> HU.Test
 q = qccheck (defaultConfig {configMaxTest = 250, configMaxFail = 5000})

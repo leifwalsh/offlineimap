@@ -39,13 +39,15 @@ newStringConnection =
                     writeBytes = lwriteBytes,
                     closeConn = return ()}
     where 
-          lreadBytes count = 
-              do (s,sw) <- get
-                 if genericLength s < count
-                    then fail "EOF in input in readBytes"
-                    else do let (r, s') = genericSplitAt count s
-                            put (s', sw)
-                            return r
+          lreadBytes count
+              | count < 0 = fail "readBytes: negative count"
+              | otherwise =
+                  do (s,sw) <- get
+                     if genericLength s < count
+                       then fail "EOF in input in readBytes"
+                       else do let (r, s') = genericSplitAt count s
+                               put (s', sw)
+                               return r
           lreadLine =
               do (s, sw) <- get
                  let (line, remainder) = spanList (\x -> "\r\n" /= take 2 x) s
