@@ -19,10 +19,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 module Network.IMAP.Connection where
 import Network.IMAP.Types
 import Control.Monad.State
+import Control.Monad.Error
 import Data.List.Utils(spanList)
 import Data.List(genericSplitAt, genericLength, intercalate)
 
-type IMAPState = State (IMAPString, IMAPString)
+type IMAPState = StateT (IMAPString, IMAPString) (Either String)
 
 {- | Set up an IMAPConnection that runs in the State monad.
 
@@ -62,16 +63,16 @@ newStringConnection =
 runStringConnection ::
        IMAPString               -- ^ Buffer to send to clients
     -> (IMAPConnection IMAPState -> IMAPState a) -- ^ Function to run
-    -> (a, (String, String))    -- ^ Results: func result, buffer status
+    -> Either String (a, (String, String))    -- ^ Results: func result, buffer status
 runStringConnection sbuf func =
-    runState (func newStringConnection) (sbuf::String, []::String)
+    runStateT (func newStringConnection) (sbuf::String, []::String)
 
 {- | Runs a State monad with a String connection, initializing it with 
 the passed lines.  -}
 runLinesConnection ::
        [IMAPString]             -- ^ Buffer to send to clients
     -> (IMAPConnection IMAPState -> IMAPState a) -- ^ Function to run
-    -> (a, (String, String))    -- ^ Results: func result, buffer status
+    -> Either String (a, (String, String))    -- ^ Results: func result, buffer status
 runLinesConnection sbuf func 
     | sbuf == [] = 
         -- For the empty input, no \r\n after.

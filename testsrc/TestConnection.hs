@@ -28,16 +28,16 @@ import Network.IMAP.Connection
 import Network.IMAP.Types
 
 prop_identity :: String -> Bool
-prop_identity f = runStringConnection f (\_ -> return ()) == ((), (f, []))
+prop_identity f = runStringConnection f (\_ -> return ()) == Right ((), (f, []))
 
 prop_linesidentity :: String -> Bool
 prop_linesidentity f =
-    runLinesConnection [f] (\_ -> return ()) == ((), (f ++ "\r\n", []))
+    runLinesConnection [f] (\_ -> return ()) == Right ((), (f ++ "\r\n", []))
 
 prop_lineslistidentity :: [String] -> Property
 prop_lineslistidentity f =
     and (map (notElem '\r') f)  ==> 
-        runLinesConnection f (\_ -> return ()) @?= ((), (expected, []))
+        runLinesConnection f (\_ -> return ()) @?= Right ((), (expected, []))
     where expected = expectedString f
 
 expectedString f =
@@ -49,13 +49,13 @@ prop_readLine :: [String] -> Property
 prop_readLine s =
     (not (null s)) && (and (map (notElem '\r') s)) ==> 
         runLinesConnection s readLine @?=
-            (head s, (expectedString (tail s), []))
+            Right (head s, (expectedString (tail s), []))
 
 prop_readBytes :: String -> Int -> Property
 prop_readBytes s l =
     l <= length s && l >= 0 ==> 
       runStringConnection s (\c -> readBytes c (fromIntegral l)) ==
-                         (take l s, (drop l s, []))
+                         Right (take l s, (drop l s, []))
 
 q :: Testable a => String -> a -> HU.Test
 q = qccheck (defaultConfig {configMaxTest = 250, configMaxFail = 5000})
