@@ -52,6 +52,11 @@ gen_literal :: String -> String
 gen_literal s =
     "{" ++ show (length s) ++ "}\r\n" ++ s
 
+prop_string3501 :: String -> Bool -> Result
+prop_string3501 s True = p string3501 (gen_quoted s) @?= Right s
+prop_string3501 s False = p string3501 (gen_literal s) @?= Right s
+    
 allt = [q "quoted" prop_quoted,
-        q "literal" prop_literal
+        q "literal" prop_literal,
+        q "string3501" prop_string3501
        ]
