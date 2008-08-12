@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 -}
-module TestConnection where
+module TestParser where
 import qualified Data.Map as Map
 import Data.List
 import qualified Test.HUnit as HU
@@ -24,51 +24,20 @@ import Data.Word
 import Test.QuickCheck
 import TestInfrastructure
 
+import Network.IMAP.Parser
 import Network.IMAP.Connection
 import Network.IMAP.Types
 
-prop_identity :: String -> Bool
-prop_identity f = runStringConnection f (\_ -> return ()) == Right ((), (f, []))
+import TestInfrastructure
+import TestConnection(expectedString, noCR)
 
-prop_linesidentity :: String -> Bool
-prop_linesidentity f =
-    runLinesConnection [f] (\_ -> return ()) == Right ((), (f ++ "\r\n", []))
-
-prop_lineslistidentity :: [String] -> Property
-prop_lineslistidentity f =
-    and (map (notElem '\r') f)  ==> 
-        runLinesConnection f (\_ -> return ()) @?= Right ((), (expected, []))
-    where expected = expectedString f
-
-expectedString f =
-              case f of
-                [] -> []
-                _ -> (intercalate "\r\n" f) ++ "\r\n"
-
-prop_readLine :: [String] -> Property
-prop_readLine s =
-    (and (map (notElem '\r') s)) ==> 
-        runLinesConnection s readLine @?=
+prop_getFullLine_basic :: [String] -> Property
+prop_getFullLine_basic s =
+    (null s || not ("}" `isSuffixOf` (head s))) && noCR s ==>
+        runLinesConnection s (getFullLine []) @?= 
             if null s
                then Left "EOF in input in readLine"
                else Right (head s, (expectedString (tail s), []))
 
-prop_readBytes :: String -> Int -> Result
-prop_readBytes s l =
-      runStringConnection s (\c -> readBytes c (fromIntegral l)) @?=
-          if l < 0
-             then Left "readBytes: negative count"
-             else case compare l (length s) of
-                    EQ -> Right (take l s, (drop l s, []))
-                    LT -> Right (take l s, (drop l s, []))
-                    GT -> Left "EOF in input in readBytes"
-
-q :: Testable a => String -> a -> HU.Test
-q = qccheck (defaultConfig {configMaxTest = 250, configMaxFail = 5000})
-
-allt = [q "Identity" prop_identity,
-        q "Lines identity" prop_linesidentity,
-        q "Lines list identity" prop_lineslistidentity,
-        q "readline" prop_readLine,
-        q "readBytes" prop_readBytes
+allt = [q "getFullLine_basic" prop_getFullLine_basic
        ]

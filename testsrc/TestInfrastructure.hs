@@ -25,6 +25,7 @@ import System.IO
 import Text.Printf
 import System.Random
 import Data.Word
+import Test.HUnit.Utils
 
 (@=?) :: (Eq a, Show a) => a -> a -> Result
 expected @=? actual = 
@@ -77,4 +78,7 @@ runVerbTestText (HU.PutText put us) t = do
    where line  = "### " ++ kind ++ path' ++ '\n' : msg
          kind  = if null path' then p0 else p1
          path' = HU.showPath (HU.path ss)
+
+q :: Testable a => String -> a -> HU.Test
+q = qccheck (defaultConfig {configMaxTest = 250, configMaxFail = 5000})
 

@@ -45,9 +45,12 @@ expectedString f =
                 [] -> []
                 _ -> (intercalate "\r\n" f) ++ "\r\n"
 
+noCR :: [String] -> Bool
+noCR s = and (map (notElem '\r') s)
+
 prop_readLine :: [String] -> Property
 prop_readLine s =
-    (and (map (notElem '\r') s)) ==> 
+    noCR s ==> 
         runLinesConnection s readLine @?=
             if null s
                then Left "EOF in input in readLine"
@@ -62,9 +65,6 @@ prop_readBytes s l =
                     EQ -> Right (take l s, (drop l s, []))
                     LT -> Right (take l s, (drop l s, []))
                     GT -> Left "EOF in input in readBytes"
-
-q :: Testable a => String -> a -> HU.Test
-q = qccheck (defaultConfig {configMaxTest = 250, configMaxFail = 5000})
 
 allt = [q "Identity" prop_identity,
         q "Lines identity" prop_linesidentity,
