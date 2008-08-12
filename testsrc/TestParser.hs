@@ -90,10 +90,33 @@ prop_respTextAtomOpt codeatom codedesc text =
     p respText ("[" ++ codeatom ++ " " ++ codedesc ++ "] " ++ text) @?=
       Just (RespText (Just (codeatom ++ " " ++ codedesc)) text)
 
+prop_greeting_bye :: String -> Property
+prop_greeting_bye s =
+    isValidAtom s && head s /= '[' ==>
+    p greeting ("* BYE " ++ s) @?=
+      (Just $ Left $ RespText Nothing s)
+
+prop_greeting_auth :: String -> Property
+prop_greeting_auth s =
+    isValidAtom s && head s /= '[' ==>
+    p' greeting ("* OK " ++ s) @?=
+      (Right $ Right $ (AUTHOK, RespText Nothing s))
+
+prop_greeting_courier :: Result
+prop_greeting_courier =
+    p greeting courierStr @?=
+      (Just $ Right $ (AUTHOK, RespText (Just code) text))
+    where courierStr = "* OK [CAPABILITY IMAP4rev1 UIDPLUS CHILDREN NAMESPACE THREAD=ORDEREDSUBJECT THREAD=REFERENCES SORT QUOTA IDLE ACL ACL2=UNION] Courier-IMAP ready. See COPYING for distribution information."
+          code = "CAPABILITY IMAP4rev1 UIDPLUS CHILDREN NAMESPACE THREAD=ORDEREDSUBJECT THREAD=REFERENCES SORT QUOTA IDLE ACL ACL2=UNION"
+          text = "Courier-IMAP ready. See COPYING for distribution information."
+
 allt = [q "getFullLine_basic" prop_getFullLine_basic,
         q "getFullLine_count" prop_getFullLine_count,
         q "readFullResponse_basic" prop_rfr_basic,
         q "respText simple" prop_respTextSimple,
         q "respText atom" prop_respTextAtom,
-        q "respTextAtomOpt" prop_respTextAtomOpt
+        q "respTextAtomOpt" prop_respTextAtomOpt,
+        q "greeting_bye" prop_greeting_bye,
+        q "greeting_auth" prop_greeting_auth,
+        q "greeting_courier" prop_greeting_courier
        ]
