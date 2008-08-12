@@ -30,6 +30,7 @@ import TestInfrastructure
 import qualified TestSyncable
 import qualified TestConnection
 import qualified TestParser
+import qualified TestParserPrim
 
 q :: Testable a => String -> a -> HU.Test
 q = qccheck (defaultConfig {configMaxTest = 250})
@@ -38,7 +39,9 @@ tl msg t = HU.TestLabel msg $ HU.TestList t
 
 allt = [tl "TestSyncable" TestSyncable.allt,
         tl "TestConnection" TestConnection.allt,
-        tl "TestParser" TestParser.allt]
+        tl "TestParserPrim" TestParserPrim.allt,
+        tl "TestParser" TestParser.allt
+       ]
 
 testh = HU.runTestTT $ HU.TestList allt
 testv = runVerbTestText (HU.putTextToHandle stderr True) $ HU.TestList allt
