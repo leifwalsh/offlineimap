@@ -1,0 +1,3 @@
+resp-text: the "text" component cannot start with [
+
+atom-char: should not include CR or LF
