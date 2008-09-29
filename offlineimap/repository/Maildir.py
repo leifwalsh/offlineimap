@@ -71,6 +71,7 @@ class MaildirRepository(BaseRepository):
         # self.root directory (we'd prefer to raise an error in that case),
         # but will make the (relative) paths underneath it.  Need to use
         # makedirs to support a / separator.
+        self.debug("Is dir? " + repr(os.path.isdir(foldername)))
         if self.getsep() == '/':
             for invalid in ['new', 'cur', 'tmp', 'offlineimap.uidvalidity']:
                 for component in foldername.split('/'):
@@ -87,7 +88,7 @@ class MaildirRepository(BaseRepository):
         # makedirs will fail because the higher-up dir already exists.
         # So, check to see if this is indeed the case.
 
-        if (self.getsep() == '/' or self.getconfboolean('existsok', 0)) \
+        if (self.getsep() == '/' or self.getconfboolean('existsok', 0) or foldername == '.') \
             and os.path.isdir(foldername):
             self.debug("makefolder: %s already is a directory" % foldername)
             # Already exists.  Sanity-check that it's not a Maildir.
@@ -112,7 +113,8 @@ class MaildirRepository(BaseRepository):
 	if self.config.has_option('Repository ' + self.name, 'restoreatime') and self.config.getboolean('Repository ' + self.name, 'restoreatime'):
 	    self._append_folder_atimes(foldername)
         return folder.Maildir.MaildirFolder(self.root, foldername,
-                                            self.getsep(), self, self.accountname)
+                                            self.getsep(), self, 
+                                            self.accountname, self.config)
     
     def _getfolders_scandir(self, root, extension = None):
         self.debug("_GETFOLDERS_SCANDIR STARTING. root = %s, extension = %s" \
@@ -158,7 +160,8 @@ class MaildirRepository(BaseRepository):
 		if self.config.has_option('Repository ' + self.name, 'restoreatime') and self.config.getboolean('Repository ' + self.name, 'restoreatime'):
 		    self._append_folder_atimes(foldername)
                 retval.append(folder.Maildir.MaildirFolder(self.root, foldername,
-                                                           self.getsep(), self, self.accountname))
+                                                           self.getsep(), self, self.accountname,
+                                                           self.config))
             if self.getsep() == '/' and dirname != '.':
                 # Check sub-directories for folders.
                 retval.extend(self._getfolders_scandir(root, foldername))

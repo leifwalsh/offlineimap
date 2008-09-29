@@ -45,8 +45,10 @@ def gettimeseq():
         timelock.release()
 
 class MaildirFolder(BaseFolder):
-    def __init__(self, root, name, sep, repository, accountname):
+    def __init__(self, root, name, sep, repository, accountname, config):
         self.name = name
+        self.config = config
+        self.dofsync = config.getdefaultboolean("general", "fsync", True)
         self.root = root
         self.sep = sep
         self.messagelist = None
@@ -183,7 +185,8 @@ class MaildirFolder(BaseFolder):
 
         # Make sure the data hits the disk
         file.flush()
-        os.fsync(file.fileno())
+        if self.dofsync:
+            os.fsync(file.fileno())
 
         file.close()
         if rtime != None:
@@ -195,13 +198,14 @@ class MaildirFolder(BaseFolder):
                     os.path.join(tmpdir, messagename))
             os.unlink(os.path.join(tmpdir, tmpmessagename))
 
-        try:
-            # fsync the directory (safer semantics in Linux)
-            fd = os.open(tmpdir, os.O_RDONLY)
-            os.fsync(fd)
-            os.close(fd)
-        except:
-            pass
+        if self.dofsync:
+            try:
+                # fsync the directory (safer semantics in Linux)
+                fd = os.open(tmpdir, os.O_RDONLY)
+                os.fsync(fd)
+                os.close(fd)
+            except:
+                pass
 
         self.messagelist[uid] = {'uid': uid, 'flags': [],
                                  'filename': os.path.join(tmpdir, messagename)}

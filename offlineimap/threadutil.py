@@ -18,7 +18,8 @@
 
 from threading import *
 from StringIO import StringIO
-import sys, traceback, thread
+from Queue import Queue, Empty
+import sys, traceback, thread, time
 from offlineimap.ui import UIBase       # for getglobalui()
 
 profiledir = None
@@ -88,8 +89,7 @@ class threadlist:
 # Exit-notify threads
 ######################################################################
 
-exitcondition = Condition(Lock())
-exitthreads = []
+exitthreads = Queue(100)
 inited = 0
 
 def initexitnotify():
@@ -110,17 +110,13 @@ def exitnotifymonitorloop(callback):
     an ExitNotifyThread, or else an infinite loop may result.  Furthermore,
     the monitor will hold the lock all the while the other thread is waiting.
     """
-    global exitcondition, exitthreads
+    global exitthreads
     while 1:                            # Loop forever.
-        exitcondition.acquire()
         try:
-            while not len(exitthreads):
-                exitcondition.wait(1)
-
-            while len(exitthreads):
-                callback(exitthreads.pop(0)) # Pull off in order added!
-        finally:
-            exitcondition.release()
+            thrd = exitthreads.get(False)
+            callback(thrd)
+        except Empty:
+            time.sleep(1)
 
 def threadexited(thread):
     """Called when a thread exits."""
@@ -146,7 +142,7 @@ class ExitNotifyThread(Thread):
     """This class is designed to alert a "monitor" to the fact that a thread has
     exited and to provide for the ability for it to find out why."""
     def run(self):
-        global exitcondition, exitthreads, profiledir
+        global exitthreads, profiledir
         self.threadid = thread.get_ident()
         try:
             if not profiledir:          # normal case
@@ -171,10 +167,8 @@ class ExitNotifyThread(Thread):
             self.setExitCause('NORMAL')
         if not hasattr(self, 'exitmessage'):
             self.setExitMessage(None)
-        exitcondition.acquire()
-        exitthreads.append(self)
-        exitcondition.notify()
-        exitcondition.release()
+
+        exitthreads.put(self, True)
 
     def setExitCause(self, cause):
         self.exitcause = cause
