@@ -30,6 +30,11 @@ except ImportError:
 else:
     import Curses
 
+try:
+    import Gnome
+except ImportError:
+    pass
+
 import Noninteractive
 import Machine
 

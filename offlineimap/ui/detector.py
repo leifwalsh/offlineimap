@@ -20,6 +20,7 @@ import offlineimap.ui
 import sys
 
 DEFAULT_UI_LIST = ('Curses.Blinkenlights', 'TTY.TTYUI',
+                   'Gnome.GnomeUI',
                    'Noninteractive.Basic', 'Noninteractive.Quiet',
                    'Machine.MachineUI')
 
