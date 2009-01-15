@@ -87,7 +87,7 @@ class GnomeUIAboutDialog(gtk.AboutDialog):
 		self.hide_all()
 		self.closed.set()
 
-	def open(self):
+	def open(self, parent=None):
 		self.ui.debug("GnomeUIAboutDialog.open()")
 		self.show_all()
 		self.closed.clear()
