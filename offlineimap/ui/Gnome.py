@@ -292,6 +292,7 @@ class GnomeUILogWindow(gtk.Dialog):
 				     gtk.STOCK_OK, gtk.RESPONSE_OK))
 		self.set_default_size(640, 480)
 		self.connect('response', self.response_cb)
+		self.connect('delete-event',self.close_on_delete_cb)
 
 		box = gtk.VBox(False, 8)
 		self.vbox.pack_start(box, True, True, 0)
@@ -378,6 +379,10 @@ class GnomeUILogWindow(gtk.Dialog):
 		# the insert-text signal will take care of scrolling...
 		gtk.gdk.threads_leave()
 		return False
+
+	def close_on_delete_cb(self, widget, event):
+		# response_cb will handle everything
+		return True
 
 	def response_cb(self, widget, response):
 		self.ui.debug("GnomeUILogWindow.response_cb()")
