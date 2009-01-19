@@ -87,7 +87,7 @@ class GnomeUIAboutDialog(gtk.AboutDialog):
 		self.hide_all()
 		self.closed.set()
 
-	def open(self):
+	def open(self, parent=None):
 		self.ui.debug("GnomeUIAboutDialog.open()")
 		self.show_all()
 		self.closed.clear()
@@ -623,7 +623,7 @@ class GnomeUI(UIBase):
 		else:
 			self.ui.add_warning(str(msg))
 
-	def sleep(self, secs, siglistener):
+	def sleep(self, secs):
 		self.ui.debug("GnomeUI.sleep(%i)" % secs)
 		msg = "Sleeping for %d minutes" % (secs / 60)
 		if secs % 60 > 0:
@@ -631,7 +631,7 @@ class GnomeUI(UIBase):
 		self.ui.add_msg(msg)
 		self.ui.icon.set_state(GnomeUIStatusIcon.STATE_IDLE)
 		self.ui.stopsleep.clear()
-		UIBase.sleep(self, secs, siglistener)
+		UIBase.sleep(self, secs)
 
 	def sleeping(self, secs, remainingsecs):
 		# Return values
@@ -667,10 +667,8 @@ class GnomeUI(UIBase):
 
 if __name__ == '__main__':
 	import time
-	from offlineimap.accounts import SigListener
 	print "MAIN: Begin tests"
 
-	siglistener = SigListener()
 
 	x = GnomeUI(None)
 	x.init_banner()
@@ -686,7 +684,7 @@ if __name__ == '__main__':
 	
 	x.warn("Sleeping 999 secs")
 	x.warn("Select \"Start Sync\" from status icon context menu to continue")
-	x.sleep(999, siglistener)
+	x.sleep(999)
 
 	x.warn("Showing log window")
 	x.ui.log.open()
@@ -696,7 +694,7 @@ if __name__ == '__main__':
 		x.ui.add_msg("Line " + str(i + 1) + " of log text")
 		time.sleep(1)
 	x.warn("Sleeping 10 secs")
-	x.sleep(10, siglistener)
+	x.sleep(10)
 
 	x.warn("Showing about - close to continue")
 	x.ui.about.open()
@@ -710,7 +708,7 @@ if __name__ == '__main__':
 		x.warn("No password given")
 
 	x.warn("Sleeping 3 secs")
-	x.sleep(3, siglistener)
+	x.sleep(3)
 	x.warn("Trying a password again with error message")
 	password = x.ui.getpass("Test", None, "Error message")
 	if password is not None:
