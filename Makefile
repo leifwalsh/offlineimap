@@ -18,7 +18,9 @@ setup: Setup.lhs OfflineIMAP.cabal
 
 clean: clean-code clean-doc
 
-test: all
+test: setup
+	./setup configure -f buildtests
+	./setup build
 	dist/build/runtests/runtests
 
 clean-code:

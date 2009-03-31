@@ -28,70 +28,14 @@ import Data.Word
 import Test.HUnit.Utils
 import Text.ParserCombinators.Parsec
 
-(@=?) :: (Eq a, Show a) => a -> a -> Result
-expected @=? actual = 
-        Result {ok = Just (expected == actual), 
-                arguments = ["Result: expected " ++ show expected ++ ", got " ++ show actual],
-                stamp = []}
-    
-(@?=) :: (Eq a, Show a) => a -> a -> Result
-(@?=) = flip (@=?)
-
 keysToMap :: Ord k => [k] -> Map.Map k ()
 keysToMap = foldl (\map k -> Map.insert k () map) Map.empty
 
 emptymap :: (Eq k, Ord k, Show v) => Map.Map k v
 emptymap = Map.empty
 
-instance (Arbitrary k, Arbitrary v, Eq k, Ord k) => Arbitrary (Map.Map k v) where
-    arbitrary = 
-        do items <- arbitrary
-           return $ Map.fromList items
-    coarbitrary = coarbitrary . Map.keys
-
-instance Arbitrary Word8 where
-    arbitrary = sized $ \n -> choose (0, min (fromIntegral n) maxBound)
-    coarbitrary n = variant (if n >= 0 then 2 * x else 2 * x + 1)
-                where x = abs . fromIntegral $ n
-
-instance Random Word8 where
-    randomR (a, b) g = (\(x, y) -> (fromInteger x, y)) $
-                       randomR (toInteger a, toInteger b) g
-    random g = randomR (minBound, maxBound) g
-
-instance Arbitrary Char where
-    arbitrary = sized $ \n -> choose ('\NUL', '\xFF')
-    coarbitrary n = variant (toEnum (2 * x + 1))
-                where x = (abs . fromEnum $ n)::Int
-
--- Modified from HUnit
-runVerbTestText :: HU.PutText st -> HU.Test -> IO (HU.Counts, st)
-runVerbTestText (HU.PutText put us) t = do
-  (counts, us') <- HU.performTest reportStart reportError reportFailure us t
-  us'' <- put (HU.showCounts counts) True us'
-  return (counts, us'')
- where
-  reportStart ss us = do hPrintf stdout "\rTesting %-70s\n"
-                                     (HU.showPath (HU.path ss))
-                         put (HU.showCounts (HU.counts ss)) False us
-  reportError   = reportProblem "Error:"   "Error in:   "
-  reportFailure = reportProblem "Failure:" "Failure in: "
-  reportProblem p0 p1 msg ss us = put line True us
-   where line  = "### " ++ kind ++ path' ++ '\n' : msg
-         kind  = if null path' then p0 else p1
-         path' = HU.showPath (HU.path ss)
-
-q :: Testable a => String -> a -> HU.Test
-q = qccheck (defaultConfig {configMaxTest = 250, configMaxFail = 20000,
-                            configEvery = \_ _ -> ""})
-    -- configEvery = testCount for displaying a running test counter
-    where testCountBase n = " (test " ++ show n ++ "/250)"
-          testCount n _ = testCountBase n ++ 
-                          replicate (length (testCountBase n)) '\b'
-
-qverbose :: Testable a => String -> a -> HU.Test
-qverbose = qccheck (defaultConfig {configMaxTest = 250, configMaxFail = 20000,
-                            configEvery = \n args -> show n ++ ":\n" ++ unlines args})
+q = qc2hu 250
+qverbose = qc2huVerbose 250
 
 
 {- | Test a parser, forcing it to apply to all input. -}

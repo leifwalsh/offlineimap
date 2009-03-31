@@ -44,6 +44,9 @@ Cabal-Version: >=1.2
 
 Flag splitBase
   description: Choose the new smaller, split-up base package.
+Flag buildtests
+  description: Build the executable to run unit tests
+  default: False
 
 Library
   Hs-Source-Dirs: src
@@ -72,6 +75,10 @@ Executable offlineimap
       UndecidableInstances
 
 Executable runtests
+  if flag(buildtests)
+    Buildable: True
+  else
+    Buildable: False
   Build-Depends: HUnit
   Main-Is: runtests.hs
   Hs-Source-Dirs: src, testsrc
