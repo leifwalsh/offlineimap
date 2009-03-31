@@ -32,7 +32,7 @@ else:
 
 try:
     import Gnome
-except ImportError:
+except (NameError, ImportError):
     pass
 
 import Noninteractive

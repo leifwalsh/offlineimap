@@ -32,19 +32,19 @@ try:
 	import gobject
 	import gtk
 	import gnome
+	import gnomekeyring as gkey
 	if gtk.pygtk_version[0] != 2 or gtk.pygtk_version[1] < 10:
 		raise Exception, 'Invalid pygtk version'
 	gtk.gdk.threads_init()
 	usable = True
 except:
 	usable = False
+	
 warnings.resetwarnings()
 
 # FIXME: Custom icons
 GNOME_UI_ICON = 'stock_mail-send-receive'
 GNOME_UI_ACTIVE_ICONS = [ 'stock_mail-forward', 'stock_mail-reply' ]
-
-
 
 class GnomeUIAboutDialog(gtk.AboutDialog):
 	def __init__(self, ui):
@@ -198,6 +198,8 @@ class GnomeUIPasswordDialog(gtk.Dialog):
 		#          |      |         |
 		#          |      | INPUT   |
 		#          +------+---------+
+		#          |KEYRING QESTION |
+		#          +----------------+
 		#          |        BUTTONS |
 		#          +----------------+
 		self.ui = ui
@@ -247,6 +249,12 @@ class GnomeUIPasswordDialog(gtk.Dialog):
 		pwlabel = gtk.Label("Password:")
 		input.pack_start(pwlabel, False, False, 0)
 
+		# KEYRING QUESTION
+		keyring = gtk.HBox(False, 16)
+		split.pack_start(keyring, True, True, 0)
+		self.save_button = gtk.CheckButton("Store password in keyring")
+		keyring.pack_start(self.save_button, False, False, 0)
+
 		self.pwentry = gtk.Entry()
 		self.pwentry.set_visibility(False)
 		self.pwentry.set_activates_default(True)
@@ -255,7 +263,9 @@ class GnomeUIPasswordDialog(gtk.Dialog):
 	def done_cb(self, dialog, response):
 		self.ui.debug("GnomeUIPasswordDialog.done_cb()")
 		self.pw = None
+		self.save_pw = False
 		if response == gtk.RESPONSE_OK:
+			self.save_pw = self.save_button.get_active()
 			self.pw = self.pwentry.get_text()
 		self.pwready.set()
 		self.close()
@@ -515,17 +525,50 @@ class GnomeUIThread:
 			self.exitsync.wait()
 			self.thread = None
 		self.lock.release()
+	
+	def get_keyring_pw(self, accountname):
+		server = accountname
+		protocol = "offlineimap"
+		gkey.get_default_keyring_sync()
+		try:
+			attrs = {"server": server, "protocol": protocol}
+			items = gkey.find_items_sync(gkey.ITEM_NETWORK_PASSWORD, attrs)
+			if len(items) > 0:
+				return items[0].secret
+			else:
+				return None
+		except (gkey.DeniedError, gkey.NoMatchError):
+			return None
+
+	def set_keyring_pw(self, accountname, pw):
+		name = "offlineimap"
+		server = accountname
+		protocol = "offlineimap"
+		attrs = {
+			"user": name,
+			"server": server,
+			"protocol": protocol,
+		}
+		gkey.item_create_sync(gkey.get_default_keyring_sync(),
+                gkey.ITEM_NETWORK_PASSWORD, "offlineimap", attrs, pw, True)	
+
 
 	def getpass(self, accountname, config, errmsg = None):
 		self.debug("GnomeUIThread.getpass()")
 		pw = None
 		self.lock.acquire()
 		if self.thread is not None:
-			gobject.idle_add(self.pw_cb, accountname, config, errmsg)
-			self.pwdialog.pwready.wait()
-			self.pwdialog.pwready.clear()
-			pw = self.pwdialog.pw
-			self.pwdialog.pw = None
+			pw = self.get_keyring_pw(accountname)
+			
+			if pw is None:    
+				gobject.idle_add(self.pw_cb, accountname, config, errmsg)
+				self.pwdialog.pwready.wait()
+				self.pwdialog.pwready.clear()
+				pw = self.pwdialog.pw
+				if self.pwdialog.save_pw:
+					self.set_keyring_pw(accountname, pw)
+				self.pwdialog.pw = None
+		
 		self.lock.release()
 		return pw
 
